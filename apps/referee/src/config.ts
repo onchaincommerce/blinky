@@ -11,6 +11,7 @@ const optionalString = () =>
 const envSchema = z.object({
   PORT: z.coerce.number().default(8787),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
+  REDIS_URL: optionalString(),
   LIVEKIT_API_KEY: optionalString(),
   LIVEKIT_API_SECRET: optionalString(),
   LIVEKIT_WS_URL: optionalString(),

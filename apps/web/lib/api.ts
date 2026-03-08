@@ -17,6 +17,16 @@ type RoomToken = {
   token: string;
 } | null;
 
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 export type WalletBalancesResponse = {
   address: string;
   balances: Array<{
@@ -46,7 +56,7 @@ const json = async <T>(path: string, init?: RequestInit): Promise<T> => {
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body.error ?? `Request failed: ${response.status}`);
+    throw new ApiError(body.error ?? `Request failed: ${response.status}`, response.status);
   }
 
   return response.json() as Promise<T>;
@@ -121,6 +131,7 @@ export const subscribeToMatch = (
     "match.ready_changed",
     "match.countdown_started",
     "match.live",
+    "match.result_detected",
     "match.resolved"
   ];
 

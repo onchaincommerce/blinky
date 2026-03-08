@@ -33,18 +33,15 @@ export function WalletBalanceCard({ address }: { address: string }) {
 
   return (
     <div className="wallet-balance-shell">
-      <div className="eyebrow">Stake balance</div>
-      {!data && !error ? <p className="note">Checking your duel cash…</p> : null}
+      <div className="eyebrow">Balance</div>
+      {!data && !error ? <p className="note">Checking wallet...</p> : null}
       {error ? <p className="status danger">{error}</p> : null}
       {data ? (
         <div className="balance-focus">
           <div>
+            <span className="data-label">Available</span>
             <strong>{Number(data.summary.usdc).toFixed(2)} USDC</strong>
-            <p className="note">
-              {data.summary.readyForTestMatch
-                ? "Loaded and ready for the next duel."
-                : "Add more test USDC before you open another room."}
-            </p>
+            <p className="note">{data.summary.readyForTestMatch ? "Ready for another duel." : "Top up test USDC."}</p>
           </div>
           <a className="secondary" href="https://faucet.circle.com/" rel="noreferrer" target="_blank">
             Top up

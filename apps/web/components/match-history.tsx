@@ -16,6 +16,8 @@ const opponentLabel = (match: MatchRecord, currentUserId: string) => {
   return email ?? (isCreator ? "Waiting on challenger" : "Creator");
 };
 
+const formatState = (value: string) => value.replaceAll("_", " ");
+
 export function MatchHistory() {
   const { currentUser } = useCurrentUser();
   const [matches, setMatches] = useState<MatchRecord[]>([]);
@@ -60,17 +62,21 @@ export function MatchHistory() {
   return (
     <section className="panel history-panel">
       <div className="history-heading">
-        <div className="eyebrow">Your duels</div>
-        <h3>Open rooms and records</h3>
-        <p className="note">Active duels stay here until they settle. Finished or stale rooms reopen as static records only.</p>
+        <div className="eyebrow">History</div>
+        <h3>Your rooms</h3>
+        <p className="note">Open and settled duels.</p>
       </div>
       {error ? <p className="status danger">{error}</p> : null}
       {matches.length === 0 ? (
-        <p className="note">No duels yet. Open one above and it will live here.</p>
+        <p className="note">No rooms yet.</p>
       ) : (
         <>
           {active.length > 0 ? (
             <div className="history-block">
+              <div className="history-section-head">
+                <span className="data-label">Active</span>
+                <span className="pill">{active.length}</span>
+              </div>
               <div className="history-list">
                 {active.map((match) => {
                   const role = match.creatorUserId === currentUser.userId ? "Creator" : "Challenger";
@@ -83,11 +89,11 @@ export function MatchHistory() {
                           <strong>{formatUsdc(match.stakeAmount)} USDC stake</strong>
                           <p className="note">Against {opponentLabel(match, currentUser.userId)}</p>
                         </div>
-                        <span className="status danger">{match.status}</span>
+                        <span className="pill">{formatState(match.status)}</span>
                       </div>
                       <div className="actions">
                         <Link className="cta" href={`/match/${match.id}`}>
-                          Open duel
+                          Open room
                         </Link>
                       </div>
                     </article>
@@ -99,6 +105,10 @@ export function MatchHistory() {
 
           {archive.length > 0 ? (
             <div className="history-block">
+              <div className="history-section-head">
+                <span className="data-label">Closed</span>
+                <span className="pill">{archive.length}</span>
+              </div>
               <div className="history-list">
                 {archive.map((match) => {
                   const role = match.creatorUserId === currentUser.userId ? "Creator" : "Challenger";

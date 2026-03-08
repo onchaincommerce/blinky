@@ -1092,12 +1092,436 @@ summary {
   --lk-border-color: rgba(255, 255, 255, 0.08);
 }
 
+.home-shell {
+  padding-top: 30px;
+}
+
+.home-layout {
+  grid-template-columns: minmax(0, 1.12fr) minmax(360px, 0.88fr);
+  align-items: start;
+}
+
+.panel,
+.poster {
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.34);
+}
+
+.panel {
+  padding: 24px;
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 22%),
+    linear-gradient(180deg, rgba(13, 19, 31, 0.98) 0%, rgba(6, 10, 18, 0.98) 100%);
+}
+
+.panel::before {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 18%),
+    radial-gradient(circle at top right, rgba(255, 77, 95, 0.1), transparent 24%),
+    radial-gradient(circle at top left, rgba(107, 231, 255, 0.08), transparent 22%);
+}
+
+.deck-rail {
+  padding-top: 0;
+  gap: 18px;
+}
+
+.deck-card::after,
+.match-banner::after,
+.record-sheet::after {
+  display: none;
+}
+
+.poster-kicker,
+.eyebrow,
+.step-number,
+.duel-feed-label {
+  padding: 7px 11px;
+  border-color: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(245, 247, 251, 0.9);
+  letter-spacing: 0.14em;
+  font-size: 0.68rem;
+}
+
+.poster h1,
+.panel h1,
+.panel h2,
+.panel h3,
+.section-heading h2,
+.match-title {
+  text-transform: none;
+  letter-spacing: -0.05em;
+  line-height: 0.94;
+}
+
+.metric strong,
+.data-card strong,
+.mini-stat strong,
+.cast-card strong,
+.challenge-summary strong,
+.balance-focus strong {
+  font-size: clamp(1.35rem, 2.8vw, 2rem);
+  line-height: 1;
+  text-transform: none;
+  overflow-wrap: anywhere;
+}
+
+.note,
+.history-card p,
+.field span,
+.info-row span,
+.info-row strong,
+.identity-email,
+.metric-identity strong,
+.banner-stat strong,
+.pre {
+  overflow-wrap: anywhere;
+}
+
+.field input {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(3, 7, 14, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.cta,
+.secondary,
+.danger {
+  min-height: 48px;
+  border-radius: 18px;
+}
+
+.pill,
+.status,
+.phase-chip,
+.preset-chip {
+  min-height: 38px;
+  padding: 9px 14px;
+  font-size: 0.72rem;
+}
+
+.pill.warn {
+  color: #ffd26a;
+  border-color: rgba(255, 210, 106, 0.26);
+  background: rgba(255, 210, 106, 0.08);
+}
+
+.home-hero {
+  min-height: 700px;
+  padding: 32px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.06), transparent 22%),
+    radial-gradient(circle at 15% 18%, rgba(107, 231, 255, 0.16), transparent 24%),
+    radial-gradient(circle at 90% 12%, rgba(255, 77, 95, 0.12), transparent 22%),
+    linear-gradient(180deg, rgba(14, 22, 36, 0.98) 0%, rgba(5, 9, 16, 1) 100%);
+}
+
+.home-hero::after {
+  content: "";
+  position: absolute;
+  right: 34px;
+  top: 34px;
+  width: 220px;
+  height: 220px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(107, 231, 255, 0.16), transparent 66%);
+}
+
+.hero-frame {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.hero-caption {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(245, 247, 251, 0.7);
+  letter-spacing: 0.08em;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.home-hero h1 {
+  position: relative;
+  z-index: 1;
+  max-width: 8ch;
+  margin-top: 30px;
+  font-size: clamp(4.2rem, 8vw, 6.8rem);
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 30rem;
+  margin-top: 18px;
+  color: rgba(245, 247, 251, 0.72);
+  font-size: 1.08rem;
+  line-height: 1.6;
+}
+
+.hero-metrics,
+.hero-steps,
+.split-metrics {
+  display: grid;
+  gap: 16px;
+}
+
+.hero-metrics {
+  position: relative;
+  z-index: 1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 34px;
+}
+
+.hero-metric,
+.hero-step {
+  position: relative;
+  z-index: 1;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 18%),
+    rgba(255, 255, 255, 0.03);
+}
+
+.hero-metric span {
+  display: block;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.hero-metric strong {
+  display: block;
+  margin-top: 10px;
+  font-family: var(--display);
+  font-size: clamp(1.3rem, 2vw, 1.8rem);
+  line-height: 1;
+}
+
+.hero-steps {
+  position: relative;
+  z-index: 1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 18px;
+}
+
+.hero-step strong {
+  display: block;
+  margin-top: 14px;
+  font-family: var(--display);
+  font-size: 1.3rem;
+}
+
+.hero-step p {
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.home-rail {
+  align-content: start;
+}
+
+.identity-copy {
+  min-width: 0;
+}
+
+.identity-email {
+  margin-top: 10px;
+  padding-bottom: 0;
+  border-bottom: 0;
+  font-size: clamp(1.5rem, 2.6vw, 2.3rem);
+  line-height: 1.02;
+}
+
+.split-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.challenge-metrics {
+  margin-top: 18px;
+}
+
+.history-panel {
+  margin-top: 26px;
+}
+
+.history-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.history-panel .history-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.history-card {
+  padding: 18px;
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 18%),
+    rgba(255, 255, 255, 0.03);
+}
+
+.history-card.active-card {
+  border-color: rgba(107, 231, 255, 0.24);
+  box-shadow: inset 0 1px 0 rgba(107, 231, 255, 0.12);
+}
+
+.match-shell {
+  gap: 18px;
+}
+
+.match-banner {
+  padding: 28px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.05), transparent 22%),
+    radial-gradient(circle at 18% 18%, rgba(107, 231, 255, 0.12), transparent 22%),
+    radial-gradient(circle at 92% 16%, rgba(255, 77, 95, 0.1), transparent 20%),
+    linear-gradient(180deg, rgba(14, 22, 36, 0.98) 0%, rgba(7, 10, 16, 1) 100%);
+}
+
+.match-title {
+  max-width: 9ch;
+  font-size: clamp(2.8rem, 6vw, 4.6rem);
+}
+
+.match-hero-meta {
+  align-items: stretch;
+}
+
+.banner-stat {
+  min-width: 140px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.banner-stat span {
+  display: block;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.64rem;
+  font-weight: 800;
+}
+
+.banner-stat strong {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--display);
+  font-size: 1.15rem;
+  line-height: 1.05;
+}
+
+.wallet-balance-shell,
+.challenge-summary,
+.info-drawer-body {
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.balance-focus {
+  align-items: center;
+}
+
+.info-drawer summary {
+  min-height: 38px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.compact-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.compact-metrics .metric:first-child {
+  grid-column: span 2;
+}
+
+.metric {
+  min-width: 0;
+}
+
+.metric-identity strong {
+  font-size: clamp(1rem, 1.8vw, 1.5rem);
+  line-height: 1.12;
+}
+
+.pre {
+  white-space: normal;
+  word-break: break-all;
+}
+
+.room-role-row,
+.record-sheet-head {
+  align-items: center;
+}
+
+.record-sheet {
+  padding: 28px;
+  border-color: rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.28), transparent 24%),
+    linear-gradient(180deg, #f4efe5 0%, #e9e2d6 100%);
+}
+
+.record-sheet .metric {
+  border-color: rgba(17, 17, 17, 0.08);
+  background: rgba(255, 255, 255, 0.48);
+}
+
+.record-sheet .metric strong {
+  color: var(--ink);
+}
+
+.record-sheet .metric-identity strong {
+  font-size: clamp(1rem, 2vw, 1.55rem);
+}
+
+.record-stamp {
+  min-height: 52px;
+  border-radius: 16px;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  background: rgba(17, 17, 17, 0.92);
+}
+
+.duel-status-strip {
+  gap: 10px;
+}
+
 @media (max-width: 1180px) {
   .landing,
+  .home-layout,
   .grid.match,
   .detection-grid,
   .poster-steps,
+  .hero-metrics,
+  .hero-steps,
   .compact-metrics,
+  .split-metrics,
   .record-summary-grid,
   .record-grid,
   .result-grid,
@@ -1124,12 +1548,21 @@ summary {
 @media (max-width: 900px) {
   .match-banner,
   .history-row,
+  .history-section-head,
   .stage-head,
   .stage-primer,
   .identity-head,
   .balance-focus,
+  .room-role-row,
+  .record-sheet-head,
   .presence-row {
     flex-direction: column;
+  }
+
+  .hero-frame,
+  .banner-meta {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .ritual-card,
@@ -1168,6 +1601,10 @@ summary {
   .poster,
   .panel {
     padding: 16px;
+  }
+
+  .home-hero h1 {
+    font-size: clamp(3.4rem, 18vw, 5rem);
   }
 
   .poster h1 {

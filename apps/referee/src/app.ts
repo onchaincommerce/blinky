@@ -20,7 +20,15 @@ export const createApp = () => {
   const refereeEngine = new RefereeEngine(matches, detector, cdpReferee);
   const walletBalanceService = new WalletBalanceService();
 
-  app.use(cors({ origin: config.CORS_ORIGIN }));
+  const corsOptions = {
+    origin: config.CORS_ORIGIN,
+    methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    optionsSuccessStatus: 204
+  };
+
+  app.use(cors(corsOptions));
+  app.options("*", cors(corsOptions));
   app.use(express.json());
 
   app.get("/health", (_req, res) => {

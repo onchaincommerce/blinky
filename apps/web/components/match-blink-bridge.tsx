@@ -11,6 +11,14 @@ import { createBlinkAnalyzer, estimateFacePose } from "../lib/blink";
 const WASM_URL = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm";
 const FACE_LANDMARKER_MODEL_URL =
   "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
+const REFEREE_SAMPLE_INTERVAL_MS = 100;
+const blinkConfidence = (baselineEAR: number | null, averageEAR: number) => {
+  if (!baselineEAR || baselineEAR <= 0) {
+    return 0.95;
+  }
+
+  return Math.max(0.7, Math.min(1, 1 - averageEAR / baselineEAR));
+};
 
 export function MatchBlinkBridge({
   matchId,
@@ -31,6 +39,7 @@ export function MatchBlinkBridge({
   const analyzerRef = useRef(createBlinkAnalyzer());
   const frameRef = useRef<number | null>(null);
   const postThrottleRef = useRef(0);
+  const reportedBlinkRef = useRef<string | null>(null);
 
   const [detectorReady, setDetectorReady] = useState(false);
   const [blinkCount, setBlinkCount] = useState(0);
@@ -105,9 +114,16 @@ export function MatchBlinkBridge({
   }, [cameraTrack]);
 
   useEffect(() => {
+    if (matchStatus !== "live") {
+      reportedBlinkRef.current = null;
+    }
+  }, [matchId, matchStatus]);
+
+  useEffect(() => {
     const loop = () => {
       const currentVideo = videoRef.current;
       const currentLandmarker = landmarkerRef.current;
+      const shouldStream = matchStatus === "countdown" || matchStatus === "live";
 
       if (currentVideo && currentLandmarker && currentVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
         const result = currentLandmarker.detectForVideo(currentVideo, performance.now());
@@ -123,7 +139,34 @@ export function MatchBlinkBridge({
             blockedReason: metrics.blockedReason
           });
 
-          if (matchStatus === "live" && Date.now() - postThrottleRef.current > 250) {
+          if (matchStatus === "live" && metrics.blinkDetected && reportedBlinkRef.current !== matchId) {
+            reportedBlinkRef.current = matchId;
+            const detectedAt = new Date().toISOString();
+
+            void fetch(`${env.apiBaseUrl}/internal/matches/${encodeURIComponent(matchId)}/result`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                loserUserId: userId,
+                confidence: blinkConfidence(metrics.baselineEAR, metrics.averageEAR),
+                detectedAt,
+                source: "client-detector"
+              })
+            })
+              .then(async (response) => {
+                if (!response.ok) {
+                  const body = await response.json().catch(() => ({}));
+                  throw new Error(body.error ?? `HTTP ${response.status}`);
+                }
+                setStreamStatus("Blink reported");
+              })
+              .catch((error) => {
+                reportedBlinkRef.current = null;
+                setStreamStatus(error instanceof Error ? error.message : "Blink report failed");
+              });
+          }
+
+          if (shouldStream && Date.now() - postThrottleRef.current >= REFEREE_SAMPLE_INTERVAL_MS) {
             postThrottleRef.current = Date.now();
             const pose = estimateFacePose(landmarks);
 
@@ -145,12 +188,12 @@ export function MatchBlinkBridge({
                   const body = await response.json().catch(() => ({}));
                   throw new Error(body.error ?? `HTTP ${response.status}`);
                 }
-                setStreamStatus("Streaming to referee");
+                setStreamStatus(matchStatus === "live" ? "Streaming to referee" : "Warming referee");
               })
               .catch((error) => {
                 setStreamStatus(error instanceof Error ? error.message : "Stream failed");
               });
-          } else if (matchStatus !== "live") {
+          } else if (!shouldStream) {
             setStreamStatus(
               metrics.blockedReason ? metrics.blockedReason : metrics.calibrated ? "Calibrated locally" : "Calibrating"
             );
@@ -161,7 +204,7 @@ export function MatchBlinkBridge({
             blockedReason: "Face lost. Keep eyes visible and centered."
           });
 
-          if (matchStatus === "live" && Date.now() - postThrottleRef.current > 250) {
+          if (shouldStream && Date.now() - postThrottleRef.current >= REFEREE_SAMPLE_INTERVAL_MS) {
             postThrottleRef.current = Date.now();
             void fetch(`${env.apiBaseUrl}/internal/matches/${encodeURIComponent(matchId)}/landmarks`, {
               method: "POST",
@@ -178,6 +221,8 @@ export function MatchBlinkBridge({
             }).catch(() => {
               setStreamStatus("Face lost");
             });
+          } else if (!shouldStream) {
+            setStreamStatus("Face lost");
           }
         }
       }

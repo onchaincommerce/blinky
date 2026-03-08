@@ -25,7 +25,10 @@ export function CreateMatchForm() {
   const [backendError, setBackendError] = useState<string | null>(null);
 
   const disabled = !currentUser || !evmAddress || !smartAccount || missingEnv.length > 0;
-  const pot = Number.parseFloat(stake || "0") * 2;
+  const stakeAmount = Number.parseFloat(stake || "0");
+  const pot = stakeAmount * 2;
+  const stakeLabel = Number.isFinite(stakeAmount) ? stakeAmount.toFixed(2) : "0.00";
+  const potLabel = Number.isFinite(pot) ? pot.toFixed(2) : "0.00";
 
   const handleCreate = async () => {
     if (!currentUser || !evmAddress || !smartAccount) return;
@@ -76,12 +79,17 @@ export function CreateMatchForm() {
 
   return (
     <div className="panel spotlight-panel challenge-panel deck-card">
-      <div className="eyebrow">New challenge</div>
-      <h3>Open a duel</h3>
-      <p className="note">Set the amount, lock your side, then send one private invite. Your opponent either matches it exactly or never enters.</p>
+      <div className="eyebrow">New duel</div>
+      <h3>Open a room</h3>
+      <p className="note">Choose the stake and fund your side.</p>
       <label className="field">
-        <span>Stake</span>
-        <input value={stake} onChange={(event) => setStake(event.target.value)} placeholder="0.10" />
+        <span>Stake (USDC)</span>
+        <input
+          inputMode="decimal"
+          placeholder="0.10"
+          value={stake}
+          onChange={(event) => setStake(event.target.value)}
+        />
       </label>
       <div className="preset-row">
         {presets.map((preset) => (
@@ -95,19 +103,25 @@ export function CreateMatchForm() {
           </button>
         ))}
       </div>
-      <div className="challenge-summary">
-        <span className="data-label">Winner takes</span>
-        <strong>{Number.isFinite(pot) ? pot.toFixed(2) : "0.00"} USDC</strong>
+      <div className="split-metrics challenge-metrics">
+        <div className="metric">
+          <span className="data-label">Your stake</span>
+          <strong>{stakeLabel} USDC</strong>
+        </div>
+        <div className="metric">
+          <span className="data-label">Pot</span>
+          <strong>{potLabel} USDC</strong>
+        </div>
       </div>
       <div className="actions" style={{ marginTop: 16 }}>
         <button className="cta" onClick={handleCreate} disabled={disabled || status === "pending"}>
-          {status === "pending" ? "Locking stake..." : "Create duel"}
+          {status === "pending" ? "Locking stake..." : "Open duel"}
         </button>
         <a className="secondary" href="/detection">
-          Test camera first
+          Check camera
         </a>
       </div>
-      {!currentUser ? <p className="status warn">Sign in first, then open the challenge.</p> : null}
+      {!currentUser ? <p className="status warn">Sign in first.</p> : null}
       {missingEnv.length > 0 ? <p className="status danger">Missing env: {missingEnv.join(", ")}</p> : null}
       {backendError ? <p className="status danger">{backendError}</p> : null}
       {error ? <p className="status danger">{error.message}</p> : null}

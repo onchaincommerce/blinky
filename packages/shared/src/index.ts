@@ -51,6 +51,7 @@ export const MatchRecordSchema = z.object({
   challengerReady: z.boolean().default(false),
   creatorPresence: z.boolean().default(false),
   challengerPresence: z.boolean().default(false),
+  settlementStatus: z.enum(["pending", "settled"]).optional(),
   countdownEndsAt: z.string().datetime().optional(),
   createTxHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/).optional(),
   joinTxHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/).optional(),
@@ -103,7 +104,7 @@ export const MatchResultRequestSchema = z.object({
   loserUserId: z.string().min(1),
   confidence: z.number().min(0).max(1),
   detectedAt: z.string().datetime(),
-  source: z.enum(["mediapipe-livekit-worker", "manual"])
+  source: z.enum(["mediapipe-livekit-worker", "client-detector", "manual"])
 });
 
 export type MatchResultRequest = z.infer<typeof MatchResultRequestSchema>;
@@ -126,6 +127,7 @@ export const MatchStreamEventTypeSchema = z.enum([
   "match.ready_changed",
   "match.countdown_started",
   "match.live",
+  "match.result_detected",
   "match.resolved"
 ]);
 

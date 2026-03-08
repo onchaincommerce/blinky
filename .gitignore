@@ -10,3 +10,6 @@ cache
 .env.*.local
 
 .vercel
+.cache
+.npm
+Library/

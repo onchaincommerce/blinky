@@ -7,6 +7,7 @@ import { useCurrentUser, useEvmAddress, useSendUserOperation } from "@coinbase/c
 import type { MatchRecord } from "@blink/shared";
 
 import {
+  ApiError,
   confirmJoinFunding,
   getMatch,
   joinMatch,
@@ -41,22 +42,22 @@ const defaultRoomState: RoomState = {
 };
 
 const statusCopy: Record<MatchRecord["status"], string> = {
-  created: "Fund the first side of the pot to open the duel.",
-  funded_one_side: "The room is open. Waiting on the challenger to match the stake.",
-  ready: "Both stakes are locked. Join the room and get ready.",
-  countdown: "Both players are locked in. Countdown is running.",
-  live: "The duel is live.",
-  resolved: "The result is final.",
-  cancelled: "This duel expired before it started.",
-  refunded: "This duel never launched and the pot was refunded."
+  created: "Waiting for the first stake.",
+  funded_one_side: "Waiting for the challenger to match the stake.",
+  ready: "Both stakes are locked. Join the room and ready up.",
+  countdown: "Countdown running.",
+  live: "Match live.",
+  resolved: "Result locked.",
+  cancelled: "Match expired before start.",
+  refunded: "Stake refunded."
 };
 
 const syncLabel = (mode: "stream" | "polling" | "offline") => {
   switch (mode) {
     case "stream":
-      return "Live sync";
+      return "Live";
     case "polling":
-      return "Reconnecting";
+      return "Retrying";
     default:
       return "Offline";
   }
@@ -75,12 +76,14 @@ export function MatchView({ matchId }: { matchId: string }) {
   const [roomState, setRoomState] = useState<RoomState>(defaultRoomState);
   const [syncMode, setSyncMode] = useState<"stream" | "polling" | "offline">("offline");
   const [showResolvedOverlay, setShowResolvedOverlay] = useState(false);
+  const [missingMatch, setMissingMatch] = useState(false);
 
   const smartAccount = useMemo(() => getSmartAccount(currentUser), [currentUser]);
   const currentEmail = useMemo(() => getUserEmail(currentUser), [currentUser]);
   const userId = currentUser?.userId;
   const presenceRef = useRef<boolean | null>(null);
   const previousStatusRef = useRef<MatchRecord["status"] | null>(null);
+  const previousResultHashRef = useRef<string | null>(null);
 
   useEffect(() => {
     setClientOrigin(window.location.origin);
@@ -102,8 +105,14 @@ export function MatchView({ matchId }: { matchId: string }) {
         setMatch(response.match);
         setRoomToken(response.roomToken);
         setApiError(null);
+        setMissingMatch(false);
       } catch (nextError) {
         if (!mounted) return;
+        if (nextError instanceof ApiError && nextError.status === 404) {
+          setMissingMatch(true);
+          setApiError("This duel does not exist in the live production referee store anymore.");
+          return;
+        }
         setApiError(nextError instanceof Error ? nextError.message : "Failed to load duel");
       }
     };
@@ -164,7 +173,7 @@ export function MatchView({ matchId }: { matchId: string }) {
 
   const stakeLabel = match ? `${formatUsdc(match.stakeAmount)} USDC` : "0.00 USDC";
   const potLabel = match ? `${formatUsdc((BigInt(match.stakeAmount) * 2n).toString())} USDC` : "0.00 USDC";
-  const heroTitle = match ? `${potLabel} on the line` : "Loading duel";
+  const heroTitle = match ? (recordMode ? "Settled duel" : `${potLabel} pot`) : "Loading duel";
   const creatorLabel = match?.creatorEmail ?? "Creator";
   const challengerLabel = match?.challengerEmail ?? (match?.challengerUserId ? "Challenger" : "Waiting");
   const opponentLabel = isCreator ? challengerLabel : creatorLabel;
@@ -187,6 +196,22 @@ export function MatchView({ matchId }: { matchId: string }) {
 
     previousStatusRef.current = match.status;
   }, [match]);
+
+  useEffect(() => {
+    if (!match?.result?.resultHash) {
+      previousResultHashRef.current = null;
+      return;
+    }
+
+    if (previousResultHashRef.current === match.result.resultHash) {
+      return;
+    }
+
+    previousResultHashRef.current = match.result.resultHash;
+    setShowResolvedOverlay(true);
+    const timer = window.setTimeout(() => setShowResolvedOverlay(false), 8000);
+    return () => window.clearTimeout(timer);
+  }, [match?.result?.resultHash]);
 
   useEffect(() => {
     if (!match || !userId || !isParticipant || recordOnly) {
@@ -219,6 +244,7 @@ export function MatchView({ matchId }: { matchId: string }) {
         if (!mounted) return;
         setMatch(response.match);
         setRoomToken(response.roomToken);
+        setMissingMatch(false);
       } catch {
         if (!mounted) return;
         setSyncMode((current) => (current === "offline" ? current : "polling"));
@@ -275,64 +301,62 @@ export function MatchView({ matchId }: { matchId: string }) {
   const primaryTitle = (() => {
     switch (ctaState) {
       case "sign_in":
-        return guestCanClaimSeat ? "Sign in to claim the seat" : "Sign in to take a seat";
+        return guestCanClaimSeat ? "Sign in to claim the seat" : "Sign in to join";
       case "invite_only":
-        return "This duel already has two players";
+        return "This duel is full";
       case "join":
-        return `Match ${stakeLabel} to join`;
+        return `Match ${stakeLabel}`;
       case "wait_for_opponent":
-        return isCreator ? "Invite your challenger" : "Waiting on the room";
+        return isCreator ? "Invite challenger" : "Waiting on room";
       case "join_room":
-        return "Allow camera access";
+        return "Connect camera";
       case "fix_camera":
-        return "Get detector ready";
+        return "Clear camera check";
       case "ready":
-        return "Ready up";
+        return "Ready";
       case "wait_ready":
-        return "Waiting on the other player";
+        return "Waiting on opponent";
       case "countdown":
         return "Countdown running";
       case "live":
-        return "Duel is live";
+        return "Match live";
       case "resolved":
         return "Result locked";
       default:
-        return "Funding the pot";
+        return "Funding";
     }
   })();
 
   const primaryNote = (() => {
     if (recordOnly) {
       return match?.result
-        ? "This duel is finished and stays here as a record."
-        : "This is a legacy room and can no longer reconnect to live video.";
+        ? "This duel is closed and remains here as a record."
+        : "This room is record-only and no longer connects to live video.";
     }
 
     switch (ctaState) {
       case "sign_in":
-        return guestCanClaimSeat
-          ? "Sign in to claim this invite and lock the matching stake."
-          : "Only signed-in players can fund or join the duel.";
+        return guestCanClaimSeat ? "Sign in to claim this invite." : "Only signed-in players can enter.";
       case "invite_only":
         return "Creator and challenger only.";
       case "join":
-        return "Lock the same stake to claim the second side of the pot.";
+        return "Lock the same stake to claim the second seat.";
       case "wait_for_opponent":
         return isCreator
-          ? "Share the invite link. Once they join and fund, the room shifts into ready check."
-          : "The creator still needs to finish opening this room.";
+          ? "Share the link. The room moves on when the challenger funds."
+          : "The creator still needs to finish funding the room.";
       case "join_room":
-        return "Your camera should connect as soon as the room loads. If it doesn’t, allow camera access in the browser.";
+        return "Allow camera access in the browser.";
       case "fix_camera":
-        return roomState.blockedReason ?? "Keep your face centered and visible until detector validation clears.";
+        return roomState.blockedReason ?? "Keep your face centered until the detector clears.";
       case "ready":
-        return "One tap. Countdown starts automatically when both players are ready.";
+        return "Countdown starts automatically when both players are ready.";
       case "wait_ready":
-        return opponentReady ? "Your side is ready. Countdown is about to start." : "You are ready. Waiting for the other player.";
+        return opponentReady ? "Countdown is about to start." : "You are ready. Waiting on the other player.";
       case "countdown":
-        return "Stay still and keep your eyes forward.";
+        return "Hold still.";
       case "live":
-        return "Do not break focus.";
+        return "Stay locked in.";
       default:
         return match ? statusCopy[match.status] : "Loading duel state...";
     }
@@ -344,9 +368,14 @@ export function MatchView({ matchId }: { matchId: string }) {
     }
 
     const youWon = match.result.winnerUserId === currentUser.userId;
+    const payoutSettled = match.status === "resolved" || match.settlementStatus === "settled";
     return {
       title: youWon ? "You won" : "You lost",
-      note: youWon ? "Payout has been pushed to the winner." : "The pot has already been released.",
+      note: payoutSettled
+        ? youWon
+          ? "Payout has been sent."
+          : "The pot has already been released."
+        : "Blink detected. Settlement is in progress.",
       stakeLabel,
       potLabel,
       opponentLabel,
@@ -362,19 +391,38 @@ export function MatchView({ matchId }: { matchId: string }) {
         ? "Invite"
         : "Viewer";
   const roleDeck = isCreator
-    ? "You opened the duel."
+    ? "Host seat"
     : isChallenger
-      ? "You joined the duel."
+      ? "Challenger seat"
       : guestCanClaimSeat || currentUserCanClaimSeat
-        ? "One open seat."
-        : "Match record";
+        ? "Open seat"
+        : "Viewer";
   const presenceLabel = roomState.connected
     ? yourReady
       ? "Ready locked"
       : "Camera live"
     : match?.status === "ready"
-      ? "Room waiting"
+      ? "Waiting for camera"
       : "Stand by";
+
+  if (missingMatch) {
+    return (
+      <div className="shell">
+        <div className="match-shell">
+          <section className="panel">
+            <div className="eyebrow">Missing match</div>
+            <h1>Duel not found</h1>
+            <p className="note">This match ID is not present in the current backend.</p>
+            <div className="actions">
+              <Link className="cta" href="/">
+                Back home
+              </Link>
+            </div>
+          </section>
+        </div>
+      </div>
+    );
+  }
 
   const handleJoin = async () => {
     if (!match || !currentUser || !evmAddress || !smartAccount) return;
@@ -440,34 +488,38 @@ export function MatchView({ matchId }: { matchId: string }) {
 
   return (
     <div className="shell">
-      <section className="masthead">
-        <div className="brand-lockup">
-          <span className="brand-tag">Blink Duel</span>
-          <span className="brand-slash">{syncLabel(syncMode)}</span>
-        </div>
-        <span className="masthead-copy">{recordOnly ? "Record view" : "Live match room"}</span>
-      </section>
-
       <div className="match-shell">
-        <div className="match-banner panel">
+        <div className="match-banner panel match-hero">
           <div className="banner-copy">
-            <div className="eyebrow">{recordMode ? "Match record" : isCreator ? "Creator room" : isChallenger ? "Challenger room" : "Match room"}</div>
+            <div className="eyebrow">{recordMode ? "Record" : "Match"}</div>
             <h1 className="match-title">{heroTitle}</h1>
             <p className="note">
               {recordMode
                 ? match?.result
-                  ? "This duel has already settled and now lives here as a record."
-                  : "This legacy room is preserved as a record only."
+                  ? "This duel is closed and stays here as a record."
+                  : "This room is preserved as a record only."
                 : match
                   ? statusCopy[match.status]
                   : "Loading duel state..."}
             </p>
           </div>
-          <div className="banner-meta">
+          <div className="banner-meta match-hero-meta">
+            {match ? (
+              <div className="banner-stat">
+                <span>Stake</span>
+                <strong>{stakeLabel}</strong>
+              </div>
+            ) : null}
+            {match ? (
+              <div className="banner-stat">
+                <span>Pot</span>
+                <strong>{potLabel}</strong>
+              </div>
+            ) : null}
             {match ? <span className="pill">{matchRecordLabel(match)}</span> : null}
             <span className={`pill ${syncMode === "polling" ? "warn" : ""}`}>{syncLabel(syncMode)}</span>
             <Link className="secondary" href="/">
-              Back to history
+              Back home
             </Link>
           </div>
         </div>
@@ -476,12 +528,12 @@ export function MatchView({ matchId }: { matchId: string }) {
           <div className="record-sheet panel">
             <div className="record-sheet-head">
               <div>
-                <div className="eyebrow">{staleLive ? "Legacy room" : "Settled duel"}</div>
+                <div className="eyebrow">{staleLive ? "Record only" : "Settled"}</div>
                 <h3>{resultView?.title ?? matchRecordLabel(match!)}</h3>
                 <p className="note">
                   {match?.result
                     ? `${resultView?.note} This room is now static.`
-                    : "This room is preserved for history only and no longer reconnects to video."}
+                    : "This room no longer reconnects to live video."}
                 </p>
               </div>
               <div className="record-stamp">
@@ -490,11 +542,11 @@ export function MatchView({ matchId }: { matchId: string }) {
             </div>
 
             <div className="record-summary-grid">
-              <div className="metric">
+              <div className="metric metric-identity">
                 <span className="muted">Creator</span>
                 <strong>{creatorLabel}</strong>
               </div>
-              <div className="metric">
+              <div className="metric metric-identity">
                 <span className="muted">Challenger</span>
                 <strong>{challengerLabel}</strong>
               </div>
@@ -508,7 +560,7 @@ export function MatchView({ matchId }: { matchId: string }) {
               </div>
               {match?.result ? (
                 <>
-                  <div className="metric">
+                  <div className="metric metric-identity">
                     <span className="muted">Winner</span>
                     <strong>{match.result.winnerUserId === match.creatorUserId ? creatorLabel : challengerLabel}</strong>
                   </div>
@@ -557,7 +609,7 @@ export function MatchView({ matchId }: { matchId: string }) {
                     <span className="muted">Stake</span>
                     <strong>{stakeLabel}</strong>
                   </div>
-                  <div className="metric">
+                  <div className="metric metric-identity">
                     <span className="muted">{isCreator ? "Challenger" : "Host"}</span>
                     <strong>{opponentLabel}</strong>
                   </div>
@@ -574,8 +626,8 @@ export function MatchView({ matchId }: { matchId: string }) {
               {showCreatorInvite ? (
                 <div className="panel invite-panel">
                   <div className="eyebrow">Invite</div>
-                  <h3>Send the room</h3>
-                  <p className="note">This link belongs to one challenger. Once they claim it, the invite folds away and the ready check takes over.</p>
+                  <h3>Send this link</h3>
+                  <p className="note">One challenger can claim this room.</p>
                   <div className="pre">{inviteUrl}</div>
                   <div className="actions" style={{ marginTop: 16 }}>
                     <CopyButton value={inviteUrl} label="Copy invite" />
@@ -587,7 +639,7 @@ export function MatchView({ matchId }: { matchId: string }) {
                 <div className="panel invite-panel">
                   <div className="eyebrow">Claimed</div>
                   <h3>{challengerLabel}</h3>
-                  <p className="note">The second seat is taken. Both players only need camera clearance and one Ready tap.</p>
+                  <p className="note">Second seat claimed. Next step is camera and Ready.</p>
                 </div>
               ) : null}
 
@@ -597,14 +649,14 @@ export function MatchView({ matchId }: { matchId: string }) {
                   <h3>{isChallenger ? creatorLabel : "Claim this duel"}</h3>
                   <p className="note">
                     {isChallenger
-                      ? "Your side is simple: match the stake, let the camera clear, then hit Ready."
-                      : "This invite has one open seat. Sign in, match the stake, and the room becomes yours."}
+                      ? "Match the stake, clear camera check, then hit Ready."
+                      : "Sign in and match the stake to take this seat."}
                   </p>
                 </div>
               ) : null}
 
               <div className="panel action-panel">
-                <div className="eyebrow">Next move</div>
+                <div className="eyebrow">Actions</div>
                 <h3>{primaryTitle}</h3>
                 <p className="note">{primaryNote}</p>
                 <div className="actions">
@@ -623,7 +675,7 @@ export function MatchView({ matchId }: { matchId: string }) {
                       className="secondary"
                       href={`/detection?matchId=${encodeURIComponent(matchId)}&userId=${encodeURIComponent(currentUser.userId)}`}
                     >
-                      Test detection
+                      Check camera
                     </Link>
                   ) : null}
                 </div>

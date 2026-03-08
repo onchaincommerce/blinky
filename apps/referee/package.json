@@ -9,6 +9,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
+    "test": "tsx --test src/**/*.test.ts",
+    "build:vercel-bundle": "node scripts/build-vercel-bundle.mjs",
     "start": "node dist/index.js",
     "simulate:blink": "tsx scripts/simulate-blink.ts",
     "referee:address": "tsx scripts/referee-address.ts"
@@ -20,6 +22,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "livekit-server-sdk": "^2.11.4",
+    "redis": "^5.11.0",
     "viem": "^2.23.6",
     "zod": "^3.24.2"
   },

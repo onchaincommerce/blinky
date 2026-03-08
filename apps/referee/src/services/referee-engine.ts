@@ -1,8 +1,10 @@
-import type { LandmarkSample, MatchResultRequest } from "@blink/shared";
+import { blinkResultHash, type LandmarkSample, type MatchResultRequest } from "@blink/shared";
 
 import { CdpRefereeService } from "./cdp-referee.js";
 import { EarBlinkDetector } from "./blink-detector.js";
 import { MatchStore } from "./match-store.js";
+
+const WARM_STATUSES = new Set(["ready", "countdown", "live"]);
 
 export class RefereeEngine {
   constructor(
@@ -12,13 +14,17 @@ export class RefereeEngine {
   ) {}
 
   async ingestLandmarkSample(matchId: string, sample: LandmarkSample) {
-    const match = this.matches.get(matchId);
-    if (!match || match.status !== "live") {
+    const match = await this.matches.get(matchId);
+    if (!match || match.result || !WARM_STATUSES.has(match.status)) {
       return null;
     }
 
-    const hit = this.detector.ingest(matchId, sample);
-    if (!hit || match.result) {
+    const live = match.status === "live";
+    const hit = this.detector.ingest(matchId, sample, {
+      allowDetections: live
+    });
+
+    if (!live || !hit) {
       return null;
     }
 
@@ -31,22 +37,62 @@ export class RefereeEngine {
   }
 
   async resolve(matchId: string, input: MatchResultRequest) {
-    const match = this.matches.get(matchId);
+    const match = await this.matches.get(matchId);
     if (!match || !match.challengerUserId || !match.challengerWallet) {
       throw new Error("Match is not ready for resolution");
     }
 
-    const resolved = this.matches.markResolved(matchId, input.loserUserId, input.confidence, input.detectedAt);
-    const winnerWallet =
-      input.loserUserId === match.creatorUserId ? match.challengerWallet : match.creatorWallet;
+    if (match.status === "resolved") {
+      return match;
+    }
 
-    const txHash = await this.cdpReferee.resolveMatch(
-      BigInt(match.matchId),
-      winnerWallet as `0x${string}`,
-      resolved.result!.resultHash as `0x${string}`
-    );
+    const lock = await this.matches.acquireLock(`match_resolve_lock:${matchId}`, 60);
+    if (!lock.acquired) {
+      return (await this.matches.get(matchId)) ?? match;
+    }
 
-    return txHash ? this.matches.markResolved(matchId, input.loserUserId, input.confidence, input.detectedAt, txHash) : resolved;
+    try {
+      const latest = (await this.matches.get(matchId)) ?? match;
+      if (!latest.challengerUserId || !latest.challengerWallet) {
+        throw new Error("Match is not ready for resolution");
+      }
+      if (latest.status === "resolved") {
+        return latest;
+      }
+      if (latest.status !== "live") {
+        throw new Error("Match is not ready for resolution");
+      }
+
+      const winnerUserId =
+        input.loserUserId === latest.creatorUserId ? latest.challengerUserId : latest.creatorUserId;
+      const winnerWallet =
+        input.loserUserId === latest.creatorUserId ? latest.challengerWallet : latest.creatorWallet;
+      const resultHash = blinkResultHash({
+        matchId,
+        loserUserId: input.loserUserId,
+        winnerUserId,
+        detectedAt: input.detectedAt,
+        confidence: input.confidence
+      });
+
+      await this.matches.markResultDetected(matchId, input.loserUserId, input.confidence, input.detectedAt);
+
+      const txHash = await this.cdpReferee.resolveMatch(
+        BigInt(latest.matchId),
+        winnerWallet as `0x${string}`,
+        resultHash as `0x${string}`
+      );
+
+      const resolved = await this.matches.markResolved(
+        matchId,
+        input.loserUserId,
+        input.confidence,
+        input.detectedAt,
+        txHash ?? undefined
+      );
+      return resolved;
+    } finally {
+      await this.matches.releaseLock(lock);
+    }
   }
 }
-

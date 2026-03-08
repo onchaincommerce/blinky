@@ -59,16 +59,16 @@ export function AuthPanel() {
     return (
       <div className="panel spotlight-panel identity-panel deck-card">
         <div className="identity-head">
-          <div>
-            <div className="eyebrow">Signed in</div>
+          <div className="identity-copy">
+            <div className="eyebrow">Account</div>
             <h3 className="identity-email">{emailLabel ?? "Unknown player"}</h3>
-            <p className="note">This identity owns your seat and carries your side of the pot.</p>
+            <p className="note">Seat owner and funding account.</p>
           </div>
           <details className="info-drawer">
-            <summary>Info</summary>
+            <summary>Details</summary>
             <div className="info-drawer-body">
               <div className="info-row">
-                <span className="data-label">Owner wallet</span>
+                <span className="data-label">Wallet</span>
                 <strong>{shortAddress(evmAddress)}</strong>
               </div>
               <div className="info-row">
@@ -101,18 +101,32 @@ export function AuthPanel() {
 
   return (
     <div className="panel spotlight-panel deck-card">
-      <div className="eyebrow">Entry</div>
-      <h3>Step in</h3>
-      <p className="note">Use email once to claim a seat and move straight into the room.</p>
+      <div className="eyebrow">Sign in</div>
+      <h3>Start with email</h3>
+      <p className="note">Use one code to open or join a duel.</p>
       <div className="grid">
         <label className="field">
           <span>Email</span>
-          <input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="player@blinkduel.gg" />
+          <input
+            autoComplete="email"
+            inputMode="email"
+            placeholder="player@blinkduel.gg"
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
         </label>
         {flowId ? (
           <label className="field">
             <span>Code</span>
-            <input value={otp} onChange={(event) => setOtp(event.target.value)} placeholder="123456" />
+            <input
+              autoComplete="one-time-code"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="123456"
+              value={otp}
+              onChange={(event) => setOtp(event.target.value)}
+            />
           </label>
         ) : null}
       </div>
@@ -123,7 +137,7 @@ export function AuthPanel() {
           </button>
         ) : (
           <button className="cta" onClick={finishFlow} disabled={busy || otp.length !== 6}>
-            {busy ? "Verifying..." : "Enter duel"}
+            {busy ? "Verifying..." : "Verify code"}
           </button>
         )}
       </div>

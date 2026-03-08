@@ -31,8 +31,8 @@ type ResultView = {
 
 const stageCopy: Record<MatchStatus, { title: string; note: string }> = {
   created: {
-    title: "Waiting on first lock",
-    note: "The room exists, but the first side of the pot is not funded yet."
+    title: "Waiting on first stake",
+    note: "The creator still needs to fund the room."
   },
   funded_one_side: {
     title: "Waiting on challenger",
@@ -40,18 +40,18 @@ const stageCopy: Record<MatchStatus, { title: string; note: string }> = {
   },
   ready: {
     title: "Get camera live",
-    note: "Join the room, stay centered, and tap Ready when the detector clears you."
+    note: "Join the room, stay centered, and tap Ready when the detector clears."
   },
   countdown: {
     title: "Countdown",
     note: "Both players are locked in. Hold still."
   },
   live: {
-    title: "Live duel",
-    note: "Eyes forward. First blink loses."
+    title: "Match live",
+    note: "Hold focus."
   },
   resolved: {
-    title: "Duel resolved",
+    title: "Match closed",
     note: "The room is now a record."
   },
   cancelled: {
@@ -60,7 +60,7 @@ const stageCopy: Record<MatchStatus, { title: string; note: string }> = {
   },
   refunded: {
     title: "Room refunded",
-    note: "Escrow went back because the duel never launched."
+    note: "Escrow was returned because the duel never launched."
   }
 };
 
@@ -128,7 +128,7 @@ function DuelStage({
           <div className="duel-feed empty-feed">
             <div className="duel-feed-copy">
               <span className="duel-feed-label">Camera</span>
-              <strong>Allow camera access and wait for the second player to show up.</strong>
+              <strong>Allow camera access and wait for the second player.</strong>
             </div>
           </div>
         ) : (
