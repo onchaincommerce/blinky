@@ -21,7 +21,14 @@ export const createApp = () => {
   const walletBalanceService = new WalletBalanceService();
 
   const corsOptions = {
-    origin: config.CORS_ORIGIN,
+    origin(origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      callback(null, config.corsOrigins.includes(origin));
+    },
     methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     optionsSuccessStatus: 204

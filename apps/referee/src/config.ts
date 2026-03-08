@@ -28,4 +28,11 @@ const envSchema = z.object({
   }, z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional())
 });
 
-export const config = envSchema.parse(process.env);
+const rawConfig = envSchema.parse(process.env);
+
+export const config = {
+  ...rawConfig,
+  corsOrigins: rawConfig.CORS_ORIGIN.split(",")
+    .map((value) => value.trim())
+    .filter(Boolean)
+};

@@ -1,7 +1,7 @@
 :root {
   --bg: #04070d;
-  --panel: rgba(10, 15, 24, 0.86);
-  --panel-2: rgba(18, 24, 36, 0.94);
+  --panel: rgba(5, 8, 14, 0.28);
+  --panel-2: rgba(12, 17, 27, 0.46);
   --paper: #f6f7fb;
   --ink: #0a0d14;
   --copy: #f5f7fb;
@@ -26,11 +26,14 @@ body {
   min-height: 100%;
   color: var(--copy);
   background:
-    radial-gradient(circle at 10% 0%, rgba(107, 231, 255, 0.14), transparent 18%),
-    radial-gradient(circle at 100% 0%, rgba(255, 77, 95, 0.14), transparent 22%),
-    radial-gradient(circle at 50% 100%, rgba(71, 106, 255, 0.12), transparent 30%),
-    linear-gradient(180deg, #07101c 0%, #020408 100%);
+    linear-gradient(180deg, rgba(2, 3, 10, 0.36) 0%, rgba(2, 2, 8, 0.72) 54%, rgba(1, 2, 6, 0.94) 100%),
+    url("/blinky_stage.png") center top / cover no-repeat fixed,
+    #020208;
   font-family: var(--body);
+}
+
+body {
+  position: relative;
 }
 
 body::before {
@@ -38,11 +41,25 @@ body::before {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: 0.1;
+  opacity: 0.58;
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.014) 1px, transparent 1px);
-  background-size: 18px 18px;
+    radial-gradient(circle at 50% 10%, rgba(215, 225, 255, 0.16), transparent 14%),
+    radial-gradient(circle at 18% 16%, rgba(255, 55, 93, 0.18), transparent 18%),
+    radial-gradient(circle at 82% 16%, rgba(255, 55, 93, 0.18), transparent 18%),
+    linear-gradient(180deg, rgba(3, 4, 11, 0.12) 0%, rgba(2, 3, 8, 0.42) 44%, rgba(1, 2, 6, 0.84) 100%);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.12;
+  background:
+    radial-gradient(circle at 50% 36%, rgba(255, 255, 255, 0.08), transparent 24%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: auto, 22px 22px, 22px 22px;
   mix-blend-mode: soft-light;
 }
 
@@ -243,12 +260,12 @@ summary {
 
 .panel {
   padding: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 24px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 18%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.028), transparent 18%),
     linear-gradient(180deg, var(--panel-2) 0%, var(--panel) 100%);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px) saturate(108%);
 }
 
 .panel::before {
@@ -257,9 +274,9 @@ summary {
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 18%),
-    radial-gradient(circle at top right, rgba(255, 77, 95, 0.12), transparent 24%),
-    radial-gradient(circle at top left, rgba(107, 231, 255, 0.08), transparent 20%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.012), transparent 18%),
+    radial-gradient(circle at top right, rgba(255, 77, 95, 0.06), transparent 24%),
+    radial-gradient(circle at top left, rgba(107, 231, 255, 0.04), transparent 20%);
 }
 
 .deck-rail {
@@ -609,8 +626,8 @@ summary {
 
 .spotlight-panel {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 18%),
-    linear-gradient(180deg, rgba(20, 28, 42, 0.98) 0%, rgba(8, 12, 18, 0.98) 100%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 18%),
+    linear-gradient(180deg, rgba(20, 28, 42, 0.42) 0%, rgba(8, 12, 18, 0.26) 100%);
 }
 
 .identity-panel,
@@ -625,8 +642,8 @@ summary {
 .detection-hero,
 .duel-stage {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 18%),
-    linear-gradient(180deg, rgba(18, 24, 36, 0.98) 0%, rgba(7, 10, 16, 0.98) 100%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 18%),
+    linear-gradient(180deg, rgba(18, 24, 36, 0.44) 0%, rgba(7, 10, 16, 0.3) 100%);
 }
 
 .history-panel {
@@ -690,9 +707,9 @@ summary {
 .info-drawer-body {
   margin-top: 18px;
   padding: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.025);
+  background: rgba(5, 8, 14, 0.16);
 }
 
 .identity-panel h3 {
@@ -721,6 +738,17 @@ summary {
 .detection-stage h3,
 .detection-hero h1 {
   letter-spacing: -0.02em;
+}
+
+.challenge-head {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.challenge-head h3 {
+  margin: 0;
+  line-height: 0.98;
 }
 
 .info-drawer {
@@ -872,11 +900,11 @@ summary {
 
 .record-sheet {
   padding: 28px;
-  color: var(--ink);
-  border-color: #111;
+  color: var(--copy);
+  border-color: rgba(255, 255, 255, 0.14);
   background:
-    linear-gradient(140deg, rgba(255, 255, 255, 0.24), transparent 18%),
-    linear-gradient(180deg, var(--paper) 0%, #e6dfd1 100%);
+    linear-gradient(145deg, rgba(255, 255, 255, 0.014), transparent 18%),
+    linear-gradient(180deg, rgba(12, 16, 27, 0.16) 0%, rgba(4, 7, 12, 0.06) 100%);
 }
 
 .record-sheet::after {
@@ -890,16 +918,16 @@ summary {
 
 .record-sheet .note,
 .record-sheet .muted {
-  color: #544c42;
+  color: rgba(245, 247, 251, 0.68);
 }
 
 .record-sheet .metric {
-  border-color: rgba(17, 17, 17, 0.14);
-  background: rgba(255, 255, 255, 0.45);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(3, 5, 10, 0.08);
 }
 
 .record-sheet .metric strong {
-  color: var(--ink);
+  color: var(--copy);
   font-size: 2rem;
 }
 
@@ -1093,12 +1121,7 @@ summary {
 }
 
 .home-shell {
-  padding-top: 30px;
-}
-
-.home-layout {
-  grid-template-columns: minmax(0, 1.12fr) minmax(360px, 0.88fr);
-  align-items: start;
+  padding-top: 34px;
 }
 
 .panel,
@@ -1110,15 +1133,15 @@ summary {
   padding: 24px;
   border-radius: 28px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 22%),
-    linear-gradient(180deg, rgba(13, 19, 31, 0.98) 0%, rgba(6, 10, 18, 0.98) 100%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.014), transparent 22%),
+    linear-gradient(180deg, rgba(12, 16, 27, 0.16) 0%, rgba(4, 7, 12, 0.06) 100%);
 }
 
 .panel::before {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 18%),
-    radial-gradient(circle at top right, rgba(255, 77, 95, 0.1), transparent 24%),
-    radial-gradient(circle at top left, rgba(107, 231, 255, 0.08), transparent 22%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.008), transparent 18%),
+    radial-gradient(circle at top right, rgba(255, 77, 95, 0.035), transparent 24%),
+    radial-gradient(circle at top left, rgba(107, 231, 255, 0.024), transparent 22%);
 }
 
 .deck-rail {
@@ -1235,46 +1258,100 @@ summary {
   background: rgba(255, 210, 106, 0.08);
 }
 
-.home-hero {
-  display: flex;
-  align-items: flex-end;
-  min-height: 460px;
-  padding: 32px;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.06), transparent 22%),
-    radial-gradient(circle at 15% 18%, rgba(107, 231, 255, 0.16), transparent 24%),
-    radial-gradient(circle at 90% 12%, rgba(255, 77, 95, 0.12), transparent 22%),
-    linear-gradient(180deg, rgba(14, 22, 36, 0.98) 0%, rgba(5, 9, 16, 1) 100%);
-}
-
-.home-hero::after {
-  content: "";
-  position: absolute;
-  right: 34px;
-  top: 34px;
-  width: 220px;
-  height: 220px;
-  border-radius: 999px;
-  background: radial-gradient(circle, rgba(107, 231, 255, 0.16), transparent 66%);
-}
-
-.home-mark {
-  position: relative;
-  z-index: 1;
+.home-stage {
   display: grid;
-  gap: 18px;
+  gap: 28px;
+  justify-items: center;
+  padding: 10px 0 0;
 }
 
-.home-hero h1 {
-  position: relative;
-  z-index: 1;
-  max-width: none;
+.home-brand {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  padding: 12px 0 8px;
+  text-align: center;
+}
+
+.home-logo {
+  width: clamp(132px, 14vw, 192px);
+  height: auto;
+  filter:
+    drop-shadow(0 18px 42px rgba(0, 0, 0, 0.52))
+    drop-shadow(0 0 26px rgba(190, 168, 255, 0.16));
+  animation: home-logo-fade 4.8s ease-in-out infinite;
+  will-change: opacity, filter;
+}
+
+.home-brand-copy {
+  display: grid;
+  gap: 0;
+}
+
+@keyframes home-logo-fade {
+  0%,
+  100% {
+    opacity: 0.56;
+    filter:
+      drop-shadow(0 18px 42px rgba(0, 0, 0, 0.52))
+      drop-shadow(0 0 18px rgba(190, 168, 255, 0.1));
+  }
+
+  50% {
+    opacity: 1;
+    filter:
+      drop-shadow(0 18px 42px rgba(0, 0, 0, 0.58))
+      drop-shadow(0 0 34px rgba(190, 168, 255, 0.24));
+  }
+}
+
+.home-brand h1 {
   margin: 0;
-  font-size: clamp(5rem, 11vw, 8.5rem);
+  font-size: clamp(4.8rem, 11vw, 8.6rem);
+  line-height: 0.88;
+  text-transform: none;
+  letter-spacing: -0.08em;
+  text-shadow: 0 18px 42px rgba(0, 0, 0, 0.5);
 }
 
-.home-rail {
-  align-content: start;
+.home-panels {
+  width: min(1180px, 100%);
+  display: grid;
+  gap: 22px;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  align-items: start;
+}
+
+.home-panels > .panel {
+  min-height: 100%;
+  border-color: rgba(255, 255, 255, 0.14);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.012), transparent 18%),
+    linear-gradient(180deg, rgba(12, 16, 27, 0.14) 0%, rgba(4, 7, 12, 0.04) 100%);
+  backdrop-filter: blur(10px) saturate(100%);
+}
+
+.home-panels > .panel::before {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.006), transparent 16%),
+    radial-gradient(circle at top right, rgba(255, 77, 95, 0.03), transparent 24%),
+    radial-gradient(circle at top left, rgba(107, 231, 255, 0.02), transparent 20%);
+}
+
+.home-panels > .spotlight-panel,
+.home-panels > .identity-panel,
+.home-panels > .challenge-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.012), transparent 18%),
+    linear-gradient(180deg, rgba(12, 16, 27, 0.14) 0%, rgba(4, 7, 12, 0.04) 100%);
+}
+
+.home-panels .wallet-balance-shell,
+.home-panels .challenge-summary,
+.home-panels .info-drawer-body,
+.home-panels .metric {
+  background: rgba(3, 5, 10, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .identity-copy {
@@ -1285,8 +1362,10 @@ summary {
   margin-top: 10px;
   padding-bottom: 0;
   border-bottom: 0;
-  font-size: clamp(1.5rem, 2.6vw, 2.3rem);
-  line-height: 1.02;
+  max-width: 100%;
+  font-size: clamp(1.34rem, 2vw, 2.02rem);
+  line-height: 1.04;
+  word-break: break-word;
 }
 
 .split-metrics {
@@ -1313,8 +1392,8 @@ summary {
   padding: 18px;
   border-radius: 22px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 18%),
-    rgba(255, 255, 255, 0.03);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.012), transparent 18%),
+    linear-gradient(180deg, rgba(12, 16, 27, 0.16) 0%, rgba(4, 7, 12, 0.06) 100%);
 }
 
 .history-card-record {
@@ -1422,9 +1501,9 @@ summary {
 .history-detail-grid > div,
 .archive-grid > div {
   padding: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(3, 5, 10, 0.08);
 }
 
 .history-detail-grid strong,
@@ -1443,10 +1522,10 @@ summary {
 .match-banner {
   padding: 28px;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.05), transparent 22%),
-    radial-gradient(circle at 18% 18%, rgba(107, 231, 255, 0.12), transparent 22%),
-    radial-gradient(circle at 92% 16%, rgba(255, 77, 95, 0.1), transparent 20%),
-    linear-gradient(180deg, rgba(14, 22, 36, 0.98) 0%, rgba(7, 10, 16, 1) 100%);
+    linear-gradient(145deg, rgba(255, 255, 255, 0.016), transparent 22%),
+    radial-gradient(circle at 18% 18%, rgba(107, 231, 255, 0.04), transparent 22%),
+    radial-gradient(circle at 92% 16%, rgba(255, 77, 95, 0.035), transparent 20%),
+    linear-gradient(180deg, rgba(12, 16, 27, 0.16) 0%, rgba(4, 7, 12, 0.06) 100%);
 }
 
 .match-title {
@@ -1461,9 +1540,9 @@ summary {
 .banner-stat {
   min-width: 140px;
   padding: 14px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(3, 5, 10, 0.08);
 }
 
 .banner-stat span {
@@ -1488,7 +1567,7 @@ summary {
 .info-drawer-body {
   padding: 18px;
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(3, 5, 10, 0.08);
 }
 
 .balance-focus {
@@ -1547,19 +1626,19 @@ summary {
 
 .record-sheet {
   padding: 28px;
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.28), transparent 24%),
-    linear-gradient(180deg, #f4efe5 0%, #e9e2d6 100%);
+    linear-gradient(145deg, rgba(255, 255, 255, 0.014), transparent 24%),
+    linear-gradient(180deg, rgba(12, 16, 27, 0.16) 0%, rgba(4, 7, 12, 0.06) 100%);
 }
 
 .record-sheet .metric {
-  border-color: rgba(17, 17, 17, 0.08);
-  background: rgba(255, 255, 255, 0.48);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(3, 5, 10, 0.08);
 }
 
 .record-sheet .metric strong {
-  color: var(--ink);
+  color: var(--copy);
 }
 
 .record-sheet .metric-identity strong {
@@ -1569,8 +1648,8 @@ summary {
 .record-stamp {
   min-height: 52px;
   border-radius: 16px;
-  border: 1px solid rgba(17, 17, 17, 0.08);
-  background: rgba(17, 17, 17, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(3, 5, 10, 0.22);
 }
 
 .duel-status-strip {
@@ -1579,7 +1658,7 @@ summary {
 
 @media (max-width: 1180px) {
   .landing,
-  .home-layout,
+  .home-panels,
   .grid.match,
   .detection-grid,
   .poster-steps,
@@ -1668,8 +1747,21 @@ summary {
     padding: 16px;
   }
 
-  .home-hero h1 {
-    font-size: clamp(3.4rem, 18vw, 5rem);
+  .home-brand {
+    gap: 12px;
+    padding-top: 4px;
+  }
+
+  .home-logo {
+    width: clamp(116px, 34vw, 154px);
+  }
+
+  .home-brand h1 {
+    font-size: clamp(3.8rem, 18vw, 5.4rem);
+  }
+
+  .home-brand p {
+    letter-spacing: 0.16em;
   }
 
   .poster h1 {

@@ -95,8 +95,10 @@ export function CreateMatchForm() {
 
   return (
     <div className="panel spotlight-panel challenge-panel deck-card">
-      <div className="eyebrow">Create</div>
-      <h3>Duel</h3>
+      <div className="challenge-head">
+        <div className="eyebrow">Duel</div>
+        <h3>Set stake</h3>
+      </div>
       <label className="field">
         <span>Stake (USDC)</span>
         <input

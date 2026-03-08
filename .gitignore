@@ -13,3 +13,4 @@ cache
 .cache
 .npm
 Library/
+.DS_Store

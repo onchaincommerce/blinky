@@ -4,6 +4,7 @@ import type { NextConfig } from "next";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const outputFileTracingRoot = path.join(__dirname, "../..");
+const refereeOrigin = (process.env.REFEREE_API_ORIGIN ?? "http://127.0.0.1:8787").replace(/\/$/, "");
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@blink/shared"],
@@ -12,7 +13,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/referee/:path*",
-        destination: "http://127.0.0.1:8787/:path*"
+        destination: `${refereeOrigin}/:path*`
       }
     ];
   }

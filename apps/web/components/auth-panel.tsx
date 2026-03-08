@@ -60,12 +60,12 @@ export function AuthPanel() {
       <div className="panel spotlight-panel identity-panel deck-card">
         <div className="identity-head">
           <div className="identity-copy">
-            <div className="eyebrow">Account</div>
+            <div className="eyebrow">Wallet</div>
             <h3 className="identity-email">{emailLabel ?? "Unknown player"}</h3>
-            <p className="note">Seat owner and funding account.</p>
+            <p className="note">Funding account for duels.</p>
           </div>
           <details className="info-drawer">
-            <summary>Details</summary>
+            <summary>Wallets</summary>
             <div className="info-drawer-body">
               <div className="info-row">
                 <span className="data-label">Wallet</span>
@@ -101,16 +101,16 @@ export function AuthPanel() {
 
   return (
     <div className="panel spotlight-panel deck-card">
-      <div className="eyebrow">Sign in</div>
-      <h3>Start with email</h3>
-      <p className="note">Use one code to open or join a duel.</p>
+      <div className="eyebrow">Wallet</div>
+      <h3>Enter email</h3>
+      <p className="note">Sign in to fund or join a duel.</p>
       <div className="grid">
         <label className="field">
           <span>Email</span>
           <input
             autoComplete="email"
             inputMode="email"
-            placeholder="player@blinkduel.gg"
+            placeholder="you@example.com"
             type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}

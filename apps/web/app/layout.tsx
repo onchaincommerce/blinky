@@ -6,8 +6,13 @@ import { Providers } from "../components/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Blink Duel",
-  description: "Real-time blink duels with CDP Embedded Wallets on Base Sepolia"
+  title: "Blinky",
+  description: "Private 1v1 blink duels.",
+  icons: {
+    icon: "/blinky_logo.png",
+    shortcut: "/blinky_logo.png",
+    apple: "/blinky_logo.png"
+  }
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
