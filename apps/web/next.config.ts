@@ -3,10 +3,11 @@ import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const outputFileTracingRoot = process.env.VERCEL ? undefined : path.join(__dirname, "../..");
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@blink/shared"],
-  outputFileTracingRoot: path.join(__dirname, "../.."),
+  outputFileTracingRoot,
   async rewrites() {
     return [
       {
