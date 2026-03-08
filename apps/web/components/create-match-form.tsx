@@ -23,16 +23,29 @@ export function CreateMatchForm() {
   const email = useMemo(() => getUserEmail(currentUser), [currentUser]);
   const [stake, setStake] = useState("0.10");
   const [backendError, setBackendError] = useState<string | null>(null);
+  const [createStage, setCreateStage] = useState<"idle" | "preparing" | "signing" | "confirming">("idle");
 
   const disabled = !currentUser || !evmAddress || !smartAccount || missingEnv.length > 0;
   const stakeAmount = Number.parseFloat(stake || "0");
   const pot = stakeAmount * 2;
   const stakeLabel = Number.isFinite(stakeAmount) ? stakeAmount.toFixed(2) : "0.00";
   const potLabel = Number.isFinite(pot) ? pot.toFixed(2) : "0.00";
+  const isLocking = createStage !== "idle" || status === "pending";
+  const progressValue =
+    createStage === "preparing" ? 22 : createStage === "signing" ? 64 : createStage === "confirming" ? 88 : 0;
+  const progressLabel =
+    createStage === "preparing"
+      ? "Preparing duel"
+      : createStage === "signing"
+        ? "Confirm in wallet"
+        : createStage === "confirming"
+          ? "Locking stake"
+          : "Duel";
 
   const handleCreate = async () => {
     if (!currentUser || !evmAddress || !smartAccount) return;
     setBackendError(null);
+    setCreateStage("preparing");
 
     try {
       const stakeAmount = parseUnits(stake, 6);
@@ -45,6 +58,7 @@ export function CreateMatchForm() {
         stakeAmount: stakeAmount.toString()
       });
 
+      setCreateStage("signing");
       const result = await sendUserOperation({
         evmSmartAccount: smartAccount,
         network: "base-sepolia",
@@ -69,19 +83,20 @@ export function CreateMatchForm() {
         throw new Error("Funding operation was sent, but no operation hash was returned");
       }
 
+      setCreateStage("confirming");
       await confirmCreateFunding(match.id, { txHash: txHash as `0x${string}` });
 
       router.push(`/match/${match.matchId}`);
     } catch (nextError) {
+      setCreateStage("idle");
       setBackendError(nextError instanceof Error ? nextError.message : "Failed to create match");
     }
   };
 
   return (
     <div className="panel spotlight-panel challenge-panel deck-card">
-      <div className="eyebrow">New duel</div>
-      <h3>Open a room</h3>
-      <p className="note">Choose the stake and fund your side.</p>
+      <div className="eyebrow">Create</div>
+      <h3>Duel</h3>
       <label className="field">
         <span>Stake (USDC)</span>
         <input
@@ -114,8 +129,14 @@ export function CreateMatchForm() {
         </div>
       </div>
       <div className="actions" style={{ marginTop: 16 }}>
-        <button className="cta" onClick={handleCreate} disabled={disabled || status === "pending"}>
-          {status === "pending" ? "Locking stake..." : "Open duel"}
+        <button
+          className={`cta cta-progress ${isLocking ? "is-loading" : ""}`.trim()}
+          disabled={disabled || isLocking}
+          onClick={handleCreate}
+          type="button"
+        >
+          <span className="cta-progress-fill" style={{ width: `${progressValue}%` }} />
+          <span className="cta-label">{progressLabel}</span>
         </button>
         <a className="secondary" href="/detection">
           Check camera

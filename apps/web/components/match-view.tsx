@@ -18,7 +18,7 @@ import {
 import { encodeApproveCall, encodeJoinMatchCall } from "../lib/contracts";
 import { getSmartAccount, getUserEmail } from "../lib/current-user";
 import { env } from "../lib/env";
-import { formatUsdc } from "../lib/format";
+import { formatDuration, formatTimestamp, formatUsdc, formatUsdcDisplay } from "../lib/format";
 import { isRecordOnlyMatch, isStaleLiveMatch, matchRecordLabel } from "../lib/match-presenter";
 import { extractOperationHash } from "../lib/user-operation";
 import { AuthPanel } from "./auth-panel";
@@ -70,7 +70,8 @@ export function MatchView({ matchId }: { matchId: string }) {
 
   const [match, setMatch] = useState<MatchRecord | null>(null);
   const [roomToken, setRoomToken] = useState<RoomToken>(null);
-  const [busy, setBusy] = useState<"join" | "ready" | null>(null);
+  const [busy, setBusy] = useState<"ready" | null>(null);
+  const [joinStage, setJoinStage] = useState<"idle" | "preparing" | "signing" | "confirming">("idle");
   const [apiError, setApiError] = useState<string | null>(null);
   const [clientOrigin, setClientOrigin] = useState("");
   const [roomState, setRoomState] = useState<RoomState>(defaultRoomState);
@@ -173,7 +174,7 @@ export function MatchView({ matchId }: { matchId: string }) {
 
   const stakeLabel = match ? `${formatUsdc(match.stakeAmount)} USDC` : "0.00 USDC";
   const potLabel = match ? `${formatUsdc((BigInt(match.stakeAmount) * 2n).toString())} USDC` : "0.00 USDC";
-  const heroTitle = match ? (recordMode ? "Settled duel" : `${potLabel} pot`) : "Loading duel";
+  const heroTitle = match ? `${potLabel} pot` : "Loading duel";
   const creatorLabel = match?.creatorEmail ?? "Creator";
   const challengerLabel = match?.challengerEmail ?? (match?.challengerUserId ? "Challenger" : "Waiting");
   const opponentLabel = isCreator ? challengerLabel : creatorLabel;
@@ -200,6 +201,11 @@ export function MatchView({ matchId }: { matchId: string }) {
   useEffect(() => {
     if (!match?.result?.resultHash) {
       previousResultHashRef.current = null;
+      return;
+    }
+
+    if (!previousResultHashRef.current) {
+      previousResultHashRef.current = match.result.resultHash;
       return;
     }
 
@@ -404,6 +410,55 @@ export function MatchView({ matchId }: { matchId: string }) {
     : match?.status === "ready"
       ? "Waiting for camera"
       : "Stand by";
+  const recordClosedAt = match ? formatTimestamp(match.result?.detectedAt ?? match.updatedAt ?? match.createdAt) : "Unknown";
+  const recordDuration = (() => {
+    if (!match?.result?.detectedAt) {
+      return "Unknown";
+    }
+
+    const startAt = match.liveStartedAt ?? match.createdAt;
+    const startTime = Date.parse(startAt);
+    const endTime = Date.parse(match.result.detectedAt);
+    if (Number.isNaN(startTime) || Number.isNaN(endTime) || endTime <= startTime) {
+      return "Unknown";
+    }
+
+    return formatDuration(endTime - startTime);
+  })();
+  const recordAmountLabel = (() => {
+    if (!match) return "0.00 USDC";
+    const stakeDisplay = `${formatUsdcDisplay(match.stakeAmount)} USDC`;
+    const potDisplay = `${formatUsdcDisplay((BigInt(match.stakeAmount) * 2n).toString())} USDC`;
+
+    if (!match.result) {
+      return potDisplay;
+    }
+
+    if (!currentUser) {
+      return potDisplay;
+    }
+
+    const won = match.result.winnerUserId === currentUser.userId;
+    return `${won ? "+" : "-"}${won ? potDisplay : stakeDisplay}`;
+  })();
+  const recordAmountTone = (() => {
+    if (!match?.result || !currentUser) {
+      return "neutral";
+    }
+
+    return match.result.winnerUserId === currentUser.userId ? "win" : "loss";
+  })();
+  const joinInFlight = joinStage !== "idle" || status === "pending";
+  const joinProgress =
+    joinStage === "preparing" ? 22 : joinStage === "signing" ? 66 : joinStage === "confirming" ? 88 : 0;
+  const joinLabel =
+    joinStage === "preparing"
+      ? "Preparing stake"
+      : joinStage === "signing"
+        ? "Confirm in wallet"
+        : joinStage === "confirming"
+          ? "Locking stake"
+          : `Match ${stakeLabel}`;
 
   if (missingMatch) {
     return (
@@ -426,7 +481,7 @@ export function MatchView({ matchId }: { matchId: string }) {
 
   const handleJoin = async () => {
     if (!match || !currentUser || !evmAddress || !smartAccount) return;
-    setBusy("join");
+    setJoinStage("preparing");
     setApiError(null);
     try {
       await joinMatch(match.id, {
@@ -437,6 +492,7 @@ export function MatchView({ matchId }: { matchId: string }) {
       });
 
       const stakeAmount = BigInt(match.stakeAmount);
+      setJoinStage("signing");
       const result = await sendUserOperation({
         evmSmartAccount: smartAccount,
         network: "base-sepolia",
@@ -456,15 +512,15 @@ export function MatchView({ matchId }: { matchId: string }) {
         throw new Error("Join operation was sent, but no operation hash was returned");
       }
 
+      setJoinStage("confirming");
       await confirmJoinFunding(match.id, { txHash: txHash as `0x${string}` });
 
       const response = await getMatch(match.id, currentUser.userId);
       setMatch(response.match);
       setRoomToken(response.roomToken);
     } catch (nextError) {
+      setJoinStage("idle");
       setApiError(nextError instanceof Error ? nextError.message : "Join failed");
-    } finally {
-      setBusy(null);
     }
   };
 
@@ -489,59 +545,18 @@ export function MatchView({ matchId }: { matchId: string }) {
   return (
     <div className="shell">
       <div className="match-shell">
-        <div className="match-banner panel match-hero">
-          <div className="banner-copy">
-            <div className="eyebrow">{recordMode ? "Record" : "Match"}</div>
-            <h1 className="match-title">{heroTitle}</h1>
-            <p className="note">
-              {recordMode
-                ? match?.result
-                  ? "This duel is closed and stays here as a record."
-                  : "This room is preserved as a record only."
-                : match
-                  ? statusCopy[match.status]
-                  : "Loading duel state..."}
-            </p>
-          </div>
-          <div className="banner-meta match-hero-meta">
-            {match ? (
-              <div className="banner-stat">
-                <span>Stake</span>
-                <strong>{stakeLabel}</strong>
-              </div>
-            ) : null}
-            {match ? (
-              <div className="banner-stat">
-                <span>Pot</span>
-                <strong>{potLabel}</strong>
-              </div>
-            ) : null}
-            {match ? <span className="pill">{matchRecordLabel(match)}</span> : null}
-            <span className={`pill ${syncMode === "polling" ? "warn" : ""}`}>{syncLabel(syncMode)}</span>
-            <Link className="secondary" href="/">
-              Back home
-            </Link>
-          </div>
-        </div>
-
         {recordMode ? (
-          <div className="record-sheet panel">
-            <div className="record-sheet-head">
+          <section className="panel archive-panel">
+            <div className="archive-head">
               <div>
-                <div className="eyebrow">{staleLive ? "Record only" : "Settled"}</div>
-                <h3>{resultView?.title ?? matchRecordLabel(match!)}</h3>
-                <p className="note">
-                  {match?.result
-                    ? `${resultView?.note} This room is now static.`
-                    : "This room no longer reconnects to live video."}
-                </p>
+                <div className="eyebrow">{staleLive ? "Closed" : "Settled"}</div>
+                <h1>{resultView?.title ?? matchRecordLabel(match!)}</h1>
+                <p className="note">{recordClosedAt}</p>
               </div>
-              <div className="record-stamp">
-                <span>{potLabel}</span>
-              </div>
+              <div className={`archive-amount ${recordAmountTone}`}>{recordAmountLabel}</div>
             </div>
 
-            <div className="record-summary-grid">
+            <div className="archive-grid">
               <div className="metric metric-identity">
                 <span className="muted">Creator</span>
                 <strong>{creatorLabel}</strong>
@@ -551,141 +566,170 @@ export function MatchView({ matchId }: { matchId: string }) {
                 <strong>{challengerLabel}</strong>
               </div>
               <div className="metric">
-                <span className="muted">Stake</span>
-                <strong>{stakeLabel}</strong>
+                <span className="muted">Length</span>
+                <strong>{recordDuration}</strong>
               </div>
               <div className="metric">
                 <span className="muted">Pot</span>
                 <strong>{potLabel}</strong>
               </div>
-              {match?.result ? (
-                <>
-                  <div className="metric metric-identity">
-                    <span className="muted">Winner</span>
-                    <strong>{match.result.winnerUserId === match.creatorUserId ? creatorLabel : challengerLabel}</strong>
-                  </div>
-                  <div className="metric">
-                    <span className="muted">Confidence</span>
-                    <strong>{match.result.confidence.toFixed(2)}</strong>
-                  </div>
-                </>
-              ) : null}
             </div>
-          </div>
+
+            <div className="actions">
+              <Link className="secondary" href="/">
+                Back home
+              </Link>
+            </div>
+          </section>
         ) : (
-          <div className="grid match">
-            <div className="grid room-column">
-              <RoomVideoShell
-                countdownEndsAt={match?.countdownEndsAt}
-                isParticipant={Boolean(isParticipant)}
-                matchId={matchId}
-                matchStatus={match?.status ?? "created"}
-                onRoomStateChange={setRoomState}
-                resultView={showResolvedOverlay ? resultView : null}
-                roomToken={roomToken}
-                userId={currentUser?.userId}
-              />
-            </div>
-
-            <div className="grid side-column duel-sidebar">
-              {!currentUser ? <AuthPanel /> : null}
-
-              <div className="panel duel-brief">
-                <div className="eyebrow">{roleLabel}</div>
-                <h3>{primaryTitle}</h3>
-                <p className="note">{primaryNote}</p>
-
-                <div className="room-role-row">
-                  <span className="pill">{roleDeck}</span>
-                  <span className={roomState.detectorReady ? "status" : "pill"}>{presenceLabel}</span>
-                </div>
-
-                <div className="compact-metrics">
-                  <div className="metric">
-                    <span className="muted">Pot</span>
-                    <strong>{potLabel}</strong>
-                  </div>
-                  <div className="metric">
-                    <span className="muted">Stake</span>
+          <>
+            <div className="match-banner panel match-hero">
+              <div className="banner-copy">
+                <div className="eyebrow">Match</div>
+                <h1 className="match-title">{heroTitle}</h1>
+                <p className="note">{match ? statusCopy[match.status] : "Loading duel state..."}</p>
+              </div>
+              <div className="banner-meta match-hero-meta">
+                {match ? (
+                  <div className="banner-stat">
+                    <span>Stake</span>
                     <strong>{stakeLabel}</strong>
                   </div>
-                  <div className="metric metric-identity">
-                    <span className="muted">{isCreator ? "Challenger" : "Host"}</span>
-                    <strong>{opponentLabel}</strong>
+                ) : null}
+                {match ? (
+                  <div className="banner-stat">
+                    <span>Pot</span>
+                    <strong>{potLabel}</strong>
                   </div>
-                </div>
-
-                <div className="duel-status-strip">
-                  <span className={opponentJoined ? "status" : "pill"}>{opponentJoined ? "Opponent in" : "Seat open"}</span>
-                  <span className={roomState.connected ? "status" : "pill"}>{roomState.connected ? "Camera on" : "Camera off"}</span>
-                  <span className={yourReady ? "status" : "pill"}>{yourReady ? "You ready" : "You waiting"}</span>
-                  <span className={opponentReady ? "status" : "pill"}>{opponentReady ? "They ready" : "They waiting"}</span>
-                </div>
-              </div>
-
-              {showCreatorInvite ? (
-                <div className="panel invite-panel">
-                  <div className="eyebrow">Invite</div>
-                  <h3>Send this link</h3>
-                  <p className="note">One challenger can claim this room.</p>
-                  <div className="pre">{inviteUrl}</div>
-                  <div className="actions" style={{ marginTop: 16 }}>
-                    <CopyButton value={inviteUrl} label="Copy invite" />
-                  </div>
-                </div>
-              ) : null}
-
-              {showCreatorClaimed ? (
-                <div className="panel invite-panel">
-                  <div className="eyebrow">Claimed</div>
-                  <h3>{challengerLabel}</h3>
-                  <p className="note">Second seat claimed. Next step is camera and Ready.</p>
-                </div>
-              ) : null}
-
-              {showChallengerPanel ? (
-                <div className="panel invite-panel">
-                  <div className="eyebrow">{isChallenger ? "Joined" : "Seat open"}</div>
-                  <h3>{isChallenger ? creatorLabel : "Claim this duel"}</h3>
-                  <p className="note">
-                    {isChallenger
-                      ? "Match the stake, clear camera check, then hit Ready."
-                      : "Sign in and match the stake to take this seat."}
-                  </p>
-                </div>
-              ) : null}
-
-              <div className="panel action-panel">
-                <div className="eyebrow">Actions</div>
-                <h3>{primaryTitle}</h3>
-                <p className="note">{primaryNote}</p>
-                <div className="actions">
-                  {canJoin ? (
-                    <button className="cta" onClick={handleJoin} disabled={busy === "join" || status === "pending"}>
-                      {busy === "join" || status === "pending" ? "Matching..." : `Match ${stakeLabel}`}
-                    </button>
-                  ) : null}
-                  {canReady ? (
-                    <button className="cta" onClick={handleReady} disabled={busy === "ready"}>
-                      {busy === "ready" ? "Locking ready..." : "Ready"}
-                    </button>
-                  ) : null}
-                  {currentUser ? (
-                    <Link
-                      className="secondary"
-                      href={`/detection?matchId=${encodeURIComponent(matchId)}&userId=${encodeURIComponent(currentUser.userId)}`}
-                    >
-                      Check camera
-                    </Link>
-                  ) : null}
-                </div>
-                {apiError ? <p className="status danger">{apiError}</p> : null}
-                {error ? <p className="status danger">{error.message}</p> : null}
-                {data?.transactionHash ? <p className="status">Latest tx: {data.transactionHash}</p> : null}
-                {!data?.transactionHash && data?.userOpHash ? <p className="status">Latest user op: {data.userOpHash}</p> : null}
+                ) : null}
+                {match ? <span className="pill">{matchRecordLabel(match)}</span> : null}
+                <span className={`pill ${syncMode === "polling" ? "warn" : ""}`}>{syncLabel(syncMode)}</span>
+                <Link className="secondary" href="/">
+                  Back home
+                </Link>
               </div>
             </div>
-          </div>
+
+            <div className="grid match">
+              <div className="grid room-column">
+                <RoomVideoShell
+                  countdownEndsAt={match?.countdownEndsAt}
+                  isParticipant={Boolean(isParticipant)}
+                  matchId={matchId}
+                  matchStatus={match?.status ?? "created"}
+                  onRoomStateChange={setRoomState}
+                  resultView={showResolvedOverlay ? resultView : null}
+                  roomToken={roomToken}
+                  userId={currentUser?.userId}
+                />
+              </div>
+
+              <div className="grid side-column duel-sidebar">
+                {!currentUser ? <AuthPanel /> : null}
+
+                <div className="panel duel-brief">
+                  <div className="eyebrow">{roleLabel}</div>
+                  <h3>{primaryTitle}</h3>
+                  <p className="note">{primaryNote}</p>
+
+                  <div className="room-role-row">
+                    <span className="pill">{roleDeck}</span>
+                    <span className={roomState.detectorReady ? "status" : "pill"}>{presenceLabel}</span>
+                  </div>
+
+                  <div className="compact-metrics">
+                    <div className="metric">
+                      <span className="muted">Pot</span>
+                      <strong>{potLabel}</strong>
+                    </div>
+                    <div className="metric">
+                      <span className="muted">Stake</span>
+                      <strong>{stakeLabel}</strong>
+                    </div>
+                    <div className="metric metric-identity">
+                      <span className="muted">{isCreator ? "Challenger" : "Host"}</span>
+                      <strong>{opponentLabel}</strong>
+                    </div>
+                  </div>
+
+                  <div className="duel-status-strip">
+                    <span className={opponentJoined ? "status" : "pill"}>{opponentJoined ? "Opponent in" : "Seat open"}</span>
+                    <span className={roomState.connected ? "status" : "pill"}>{roomState.connected ? "Camera on" : "Camera off"}</span>
+                    <span className={yourReady ? "status" : "pill"}>{yourReady ? "You ready" : "You waiting"}</span>
+                    <span className={opponentReady ? "status" : "pill"}>{opponentReady ? "They ready" : "They waiting"}</span>
+                  </div>
+                </div>
+
+                {showCreatorInvite ? (
+                  <div className="panel invite-panel">
+                    <div className="eyebrow">Invite</div>
+                    <h3>Send this link</h3>
+                    <p className="note">One challenger can claim this room.</p>
+                    <div className="pre">{inviteUrl}</div>
+                    <div className="actions" style={{ marginTop: 16 }}>
+                      <CopyButton value={inviteUrl} label="Copy invite" />
+                    </div>
+                  </div>
+                ) : null}
+
+                {showCreatorClaimed ? (
+                  <div className="panel invite-panel">
+                    <div className="eyebrow">Claimed</div>
+                    <h3>{challengerLabel}</h3>
+                    <p className="note">Second seat claimed. Next step is camera and Ready.</p>
+                  </div>
+                ) : null}
+
+                {showChallengerPanel ? (
+                  <div className="panel invite-panel">
+                    <div className="eyebrow">{isChallenger ? "Joined" : "Seat open"}</div>
+                    <h3>{isChallenger ? creatorLabel : "Claim this duel"}</h3>
+                    <p className="note">
+                      {isChallenger
+                        ? "Match the stake, clear camera check, then hit Ready."
+                        : "Sign in and match the stake to take this seat."}
+                    </p>
+                  </div>
+                ) : null}
+
+                <div className="panel action-panel">
+                  <div className="eyebrow">Actions</div>
+                  <h3>{primaryTitle}</h3>
+                  <p className="note">{primaryNote}</p>
+                  <div className="actions">
+                    {canJoin ? (
+                      <button
+                        className={`cta cta-progress ${joinInFlight ? "is-loading" : ""}`.trim()}
+                        disabled={joinInFlight}
+                        onClick={handleJoin}
+                        type="button"
+                      >
+                        <span className="cta-progress-fill" style={{ width: `${joinProgress}%` }} />
+                        <span className="cta-label">{joinLabel}</span>
+                      </button>
+                    ) : null}
+                    {canReady ? (
+                      <button className="cta" onClick={handleReady} disabled={busy === "ready"}>
+                        {busy === "ready" ? "Locking ready..." : "Ready"}
+                      </button>
+                    ) : null}
+                    {currentUser ? (
+                      <Link
+                        className="secondary"
+                        href={`/detection?matchId=${encodeURIComponent(matchId)}&userId=${encodeURIComponent(currentUser.userId)}`}
+                      >
+                        Check camera
+                      </Link>
+                    ) : null}
+                  </div>
+                  {apiError ? <p className="status danger">{apiError}</p> : null}
+                  {error ? <p className="status danger">{error.message}</p> : null}
+                  {data?.transactionHash ? <p className="status">Latest tx: {data.transactionHash}</p> : null}
+                  {!data?.transactionHash && data?.userOpHash ? <p className="status">Latest user op: {data.userOpHash}</p> : null}
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>

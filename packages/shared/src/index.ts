@@ -52,6 +52,7 @@ export const MatchRecordSchema = z.object({
   creatorPresence: z.boolean().default(false),
   challengerPresence: z.boolean().default(false),
   settlementStatus: z.enum(["pending", "settled"]).optional(),
+  liveStartedAt: z.string().datetime().optional(),
   countdownEndsAt: z.string().datetime().optional(),
   createTxHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/).optional(),
   joinTxHash: z.string().regex(/^0x[a-fA-F0-9]{64}$/).optional(),

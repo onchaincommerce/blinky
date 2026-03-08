@@ -7,8 +7,8 @@ import { useCurrentUser } from "@coinbase/cdp-hooks";
 import type { MatchRecord } from "@blink/shared";
 
 import { listMatches } from "../lib/api";
-import { formatUsdc } from "../lib/format";
-import { isRecordOnlyMatch, matchRecordLabel } from "../lib/match-presenter";
+import { formatDuration, formatTimestamp, formatUsdcDisplay } from "../lib/format";
+import { isRecordOnlyMatch, isStaleLiveMatch } from "../lib/match-presenter";
 
 const opponentLabel = (match: MatchRecord, currentUserId: string) => {
   const isCreator = match.creatorUserId === currentUserId;
@@ -17,6 +17,58 @@ const opponentLabel = (match: MatchRecord, currentUserId: string) => {
 };
 
 const formatState = (value: string) => value.replaceAll("_", " ");
+const getActivityAt = (match: MatchRecord) => match.result?.detectedAt ?? match.updatedAt ?? match.createdAt;
+
+const getDurationLabel = (match: MatchRecord) => {
+  if (!match.result?.detectedAt) {
+    return "In progress";
+  }
+
+  const startAt = match.liveStartedAt ?? match.createdAt;
+  const startTime = Date.parse(startAt);
+  const endTime = Date.parse(match.result.detectedAt);
+  if (Number.isNaN(startTime) || Number.isNaN(endTime) || endTime <= startTime) {
+    return "Unknown";
+  }
+
+  return formatDuration(endTime - startTime);
+};
+
+const getSummary = (match: MatchRecord, currentUserId: string) => {
+  const stakeLabel = `${formatUsdcDisplay(match.stakeAmount)} USDC`;
+  const potLabel = `${formatUsdcDisplay((BigInt(match.stakeAmount) * 2n).toString())} USDC`;
+
+  if (match.result) {
+    const won = match.result.winnerUserId === currentUserId;
+    return {
+      label: won ? "Won" : "Lost",
+      amount: `${won ? "+" : "-"}${won ? potLabel : stakeLabel}`,
+      tone: won ? "win" : "loss"
+    };
+  }
+
+  if (match.status === "refunded") {
+    return {
+      label: "Refunded",
+      amount: `+${stakeLabel}`,
+      tone: "refund"
+    };
+  }
+
+  if (match.status === "cancelled" || isStaleLiveMatch(match)) {
+    return {
+      label: "Closed",
+      amount: potLabel,
+      tone: "neutral"
+    };
+  }
+
+  return {
+    label: formatState(match.status),
+    amount: potLabel,
+    tone: "live"
+  };
+};
 
 export function MatchHistory() {
   const { currentUser } = useCurrentUser();
@@ -56,85 +108,66 @@ export function MatchHistory() {
     return null;
   }
 
-  const active = matches.filter((match) => !isRecordOnlyMatch(match));
-  const archive = matches.filter((match) => isRecordOnlyMatch(match));
+  const orderedMatches = [...matches].sort((left, right) => getActivityAt(right).localeCompare(getActivityAt(left)));
 
   return (
     <section className="panel history-panel">
       <div className="history-heading">
         <div className="eyebrow">History</div>
-        <h3>Your rooms</h3>
-        <p className="note">Open and settled duels.</p>
+        <h3>Recent duels</h3>
       </div>
       {error ? <p className="status danger">{error}</p> : null}
-      {matches.length === 0 ? (
+      {orderedMatches.length === 0 ? (
         <p className="note">No rooms yet.</p>
       ) : (
-        <>
-          {active.length > 0 ? (
-            <div className="history-block">
-              <div className="history-section-head">
-                <span className="data-label">Active</span>
-                <span className="pill">{active.length}</span>
-              </div>
-              <div className="history-list">
-                {active.map((match) => {
-                  const role = match.creatorUserId === currentUser.userId ? "Creator" : "Challenger";
+        <div className="history-feed">
+          {orderedMatches.map((match) => {
+            const recordOnly = isRecordOnlyMatch(match);
+            const opponent = opponentLabel(match, currentUser.userId);
+            const summary = getSummary(match, currentUser.userId);
+            const stakeLabel = `${formatUsdcDisplay(match.stakeAmount)} USDC`;
+            const potLabel = `${formatUsdcDisplay((BigInt(match.stakeAmount) * 2n).toString())} USDC`;
 
-                  return (
-                    <article className="history-card active-card" key={match.id}>
-                      <div className="history-row">
-                        <div>
-                          <span className="data-label">{role}</span>
-                          <strong>{formatUsdc(match.stakeAmount)} USDC stake</strong>
-                          <p className="note">Against {opponentLabel(match, currentUser.userId)}</p>
-                        </div>
-                        <span className="pill">{formatState(match.status)}</span>
-                      </div>
-                      <div className="actions">
-                        <Link className="cta" href={`/match/${match.id}`}>
-                          Open room
-                        </Link>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
+            return (
+              <article className={`history-card ${recordOnly ? "history-card-record" : "active-card"}`.trim()} key={match.id}>
+                <div className="history-card-head">
+                  <div className="history-copy">
+                    <div className="history-inline">
+                      <span className="data-label">{formatTimestamp(getActivityAt(match))}</span>
+                      <span className={`history-tone ${summary.tone}`}>{summary.label}</span>
+                    </div>
+                    <strong>{opponent}</strong>
+                    <p className="note">{recordOnly ? `${getDurationLabel(match)} duel` : `${formatState(match.status)} room`}</p>
+                  </div>
+                  <div className={`history-amount ${summary.tone}`}>{summary.amount}</div>
+                </div>
 
-          {archive.length > 0 ? (
-            <div className="history-block">
-              <div className="history-section-head">
-                <span className="data-label">Closed</span>
-                <span className="pill">{archive.length}</span>
-              </div>
-              <div className="history-list">
-                {archive.map((match) => {
-                  const role = match.creatorUserId === currentUser.userId ? "Creator" : "Challenger";
+                <div className="history-detail-grid">
+                  <div>
+                    <span className="mini-label">Stake</span>
+                    <strong>{stakeLabel}</strong>
+                  </div>
+                  <div>
+                    <span className="mini-label">Pot</span>
+                    <strong>{potLabel}</strong>
+                  </div>
+                  <div>
+                    <span className="mini-label">Length</span>
+                    <strong>{getDurationLabel(match)}</strong>
+                  </div>
+                </div>
 
-                  return (
-                    <article className="history-card" key={match.id}>
-                      <div className="history-row">
-                        <div>
-                          <span className="data-label">{role}</span>
-                          <strong>{formatUsdc(match.stakeAmount)} USDC stake</strong>
-                          <p className="note">Against {opponentLabel(match, currentUser.userId)}</p>
-                        </div>
-                        <span className="pill">{matchRecordLabel(match)}</span>
-                      </div>
-                      <div className="actions">
-                        <Link className="secondary" href={`/match/${match.id}`}>
-                          View record
-                        </Link>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
-        </>
+                {!recordOnly ? (
+                  <div className="actions">
+                    <Link className="cta" href={`/match/${match.id}`}>
+                      Duel
+                    </Link>
+                  </div>
+                ) : null}
+              </article>
+            );
+          })}
+        </div>
       )}
     </section>
   );

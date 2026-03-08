@@ -517,10 +517,12 @@ export class MatchStore {
         throw new Error("Match is not ready to start");
       }
 
+      const liveStartedAt = match.liveStartedAt ?? new Date().toISOString();
       return this.patchLocal(
         matchId,
         {
           status: "live",
+          liveStartedAt,
           countdownEndsAt: undefined,
           startTxHash: txHash
         },
@@ -537,9 +539,11 @@ export class MatchStore {
         throw new Error("Match is not ready to start");
       }
 
+      const liveStartedAt = match.liveStartedAt ?? new Date().toISOString();
       return {
         patch: {
           status: "live",
+          liveStartedAt,
           countdownEndsAt: undefined,
           startTxHash: txHash
         },
