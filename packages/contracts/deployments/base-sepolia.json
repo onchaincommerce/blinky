@@ -1,0 +1,9 @@
+{
+  "network": "base-sepolia",
+  "deployer": "0xBCA2886530169439D344ce80F7F0781Ba10a3645",
+  "owner": "0xBCA2886530169439D344ce80F7F0781Ba10a3645",
+  "referee": "0xBB767D8A2bA900D1cECa239b84a2ad1EfB3d9014",
+  "stakeToken": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+  "deployMockUsdc": false,
+  "blinkMatchEscrow": "0x1aE7ecf83e03f9508996A856d08e6a0969e18b9f"
+}

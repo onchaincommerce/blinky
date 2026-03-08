@@ -1,0 +1,33 @@
+{
+  "name": "@blink/referee",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "simulate:blink": "tsx scripts/simulate-blink.ts",
+    "referee:address": "tsx scripts/referee-address.ts"
+  },
+  "dependencies": {
+    "@blink/shared": "0.0.1",
+    "@coinbase/cdp-sdk": "^1.45.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "livekit-server-sdk": "^2.11.4",
+    "viem": "^2.23.6",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}

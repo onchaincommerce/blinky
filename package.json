@@ -1,0 +1,23 @@
+{
+  "name": "blink-money",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace @blink/web",
+    "dev:referee": "npm run dev --workspace @blink/referee",
+    "tunnel:web": "ngrok http 3000 --log=stdout",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20.18.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}
