@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 320" fill="none">
+  <defs>
+    <radialGradient id="sclera" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(320 160) rotate(90) scale(120 276)">
+      <stop stop-color="#FFF8FA" />
+      <stop offset="0.52" stop-color="#F6E9EC" />
+      <stop offset="0.8" stop-color="#E7C9D0" />
+      <stop offset="1" stop-color="#CE9EA9" />
+    </radialGradient>
+    <radialGradient id="iris" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(302 138) rotate(51.5) scale(156)">
+      <stop stop-color="#E7F8FF" />
+      <stop offset="0.2" stop-color="#9FD8FF" />
+      <stop offset="0.5" stop-color="#4C90D9" />
+      <stop offset="0.8" stop-color="#20345B" />
+      <stop offset="1" stop-color="#090B14" />
+    </radialGradient>
+    <radialGradient id="pupil" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(310 150) rotate(55.3048) scale(78)">
+      <stop stop-color="#1A2437" />
+      <stop offset="0.6" stop-color="#04070D" />
+      <stop offset="1" stop-color="#000000" />
+    </radialGradient>
+    <clipPath id="eyeClip">
+      <path d="M74 160C118 102 202 72 320 72C438 72 522 102 566 160C522 218 438 248 320 248C202 248 118 218 74 160Z" />
+    </clipPath>
+  </defs>
+
+  <path d="M56 160C104 88 194 52 320 52C446 52 536 88 584 160C536 232 446 268 320 268C194 268 104 232 56 160Z" fill="#05080F" />
+  <path d="M56 160C104 88 194 52 320 52C446 52 536 88 584 160C536 232 446 268 320 268C194 268 104 232 56 160Z" fill="#0B1017" fill-opacity="0.28" />
+  <g clip-path="url(#eyeClip)">
+    <path d="M74 160C118 102 202 72 320 72C438 72 522 102 566 160C522 218 438 248 320 248C202 248 118 218 74 160Z" fill="url(#sclera)" />
+    <path d="M88 116C138 124 194 141 242 166" stroke="#A51325" stroke-linecap="round" stroke-opacity="0.55" stroke-width="4" />
+    <path d="M102 140C158 148 212 170 262 196" stroke="#B6172C" stroke-linecap="round" stroke-opacity="0.48" stroke-width="3" />
+    <path d="M100 184C148 182 205 178 256 168" stroke="#8E1023" stroke-linecap="round" stroke-opacity="0.44" stroke-width="3" />
+    <path d="M542 116C494 124 444 142 394 168" stroke="#A51325" stroke-linecap="round" stroke-opacity="0.55" stroke-width="4" />
+    <path d="M532 146C478 152 430 174 378 198" stroke="#B6172C" stroke-linecap="round" stroke-opacity="0.48" stroke-width="3" />
+    <path d="M530 182C482 182 430 178 382 168" stroke="#8E1023" stroke-linecap="round" stroke-opacity="0.44" stroke-width="3" />
+    <path d="M124 102C170 128 198 152 228 196" stroke="#C12435" stroke-linecap="round" stroke-opacity="0.34" stroke-width="2.5" />
+    <path d="M516 102C470 128 442 152 412 196" stroke="#C12435" stroke-linecap="round" stroke-opacity="0.34" stroke-width="2.5" />
+    <circle cx="320" cy="160" r="84" fill="url(#iris)" />
+    <circle cx="320" cy="160" r="52" fill="#111B2E" fill-opacity="0.36" />
+    <circle cx="320" cy="160" r="36" fill="url(#pupil)" />
+    <circle cx="286" cy="126" r="14" fill="white" fill-opacity="0.94" />
+    <circle cx="302" cy="146" r="6" fill="white" fill-opacity="0.48" />
+    <circle cx="354" cy="192" r="18" fill="#8BE7FF" fill-opacity="0.16" />
+  </g>
+  <path d="M92 150C140 101 220 76 320 76C420 76 500 101 548 150" stroke="#2F3644" stroke-linecap="round" stroke-opacity="0.96" stroke-width="18" />
+  <path d="M92 170C140 219 220 244 320 244C420 244 500 219 548 170" stroke="#151A24" stroke-linecap="round" stroke-opacity="0.92" stroke-width="14" />
+</svg>

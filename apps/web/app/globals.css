@@ -1274,13 +1274,54 @@ summary {
 }
 
 .home-logo {
-  width: clamp(132px, 14vw, 192px);
+  width: clamp(240px, 28vw, 390px);
   height: auto;
+  aspect-ratio: 2;
   filter:
     drop-shadow(0 18px 42px rgba(0, 0, 0, 0.52))
-    drop-shadow(0 0 26px rgba(190, 168, 255, 0.16));
+    drop-shadow(0 0 30px rgba(255, 77, 95, 0.16));
   animation: home-logo-fade 4.8s ease-in-out infinite;
   will-change: opacity, filter;
+}
+
+.eye-logo {
+  --eye-look-x: 0px;
+  --eye-look-y: 0px;
+  position: relative;
+  display: block;
+}
+
+.eye-logo-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.eye-logo-gaze {
+  transform: translate(var(--eye-look-x), var(--eye-look-y));
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 70ms linear;
+}
+
+.eye-logo-open,
+.eye-logo-lid-top,
+.eye-logo-lid-bottom {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.eye-logo-open {
+  animation: eye-logo-blink 8.8s ease-in-out infinite;
+}
+
+.eye-logo-lid-top {
+  animation: eye-logo-top-lid 8.8s ease-in-out infinite;
+}
+
+.eye-logo-lid-bottom {
+  animation: eye-logo-bottom-lid 8.8s ease-in-out infinite;
 }
 
 .home-brand-copy {
@@ -1294,14 +1335,62 @@ summary {
     opacity: 0.56;
     filter:
       drop-shadow(0 18px 42px rgba(0, 0, 0, 0.52))
-      drop-shadow(0 0 18px rgba(190, 168, 255, 0.1));
+      drop-shadow(0 0 18px rgba(255, 77, 95, 0.12));
   }
 
   50% {
     opacity: 1;
     filter:
       drop-shadow(0 18px 42px rgba(0, 0, 0, 0.58))
-      drop-shadow(0 0 34px rgba(190, 168, 255, 0.24));
+      drop-shadow(0 0 28px rgba(255, 77, 95, 0.22));
+  }
+}
+
+@keyframes eye-logo-blink {
+  0%,
+  44%,
+  46.5%,
+  80%,
+  82%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  45.2%,
+  81% {
+    transform: scaleY(0.04);
+  }
+}
+
+@keyframes eye-logo-top-lid {
+  0%,
+  44%,
+  46.5%,
+  80%,
+  82%,
+  100% {
+    transform: translateY(0);
+  }
+
+  45.2%,
+  81% {
+    transform: translateY(18px);
+  }
+}
+
+@keyframes eye-logo-bottom-lid {
+  0%,
+  44%,
+  46.5%,
+  80%,
+  82%,
+  100% {
+    transform: translateY(0);
+  }
+
+  45.2%,
+  81% {
+    transform: translateY(-18px);
   }
 }
 
@@ -1320,6 +1409,56 @@ summary {
   gap: 22px;
   grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
   align-items: start;
+}
+
+.home-intro {
+  width: min(1180px, 100%);
+  display: grid;
+  gap: 22px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  align-items: start;
+}
+
+.home-intro-copy,
+.home-start {
+  position: relative;
+  z-index: 1;
+}
+
+.home-intro h2,
+.home-start h3 {
+  margin: 0;
+}
+
+.home-intro h2 {
+  max-width: 16ch;
+  margin-top: 12px;
+  font-size: clamp(2rem, 4vw, 3.1rem);
+  line-height: 0.96;
+}
+
+.home-intro .note {
+  max-width: 56ch;
+  margin: 14px 0 0;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.home-start {
+  padding: 18px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.home-start-list {
+  margin: 14px 0 0;
+  padding-left: 20px;
+  color: rgba(245, 247, 251, 0.82);
+}
+
+.home-start-list li + li {
+  margin-top: 10px;
 }
 
 .home-panels > .panel {
@@ -1658,6 +1797,7 @@ summary {
 
 @media (max-width: 1180px) {
   .landing,
+  .home-intro,
   .home-panels,
   .grid.match,
   .detection-grid,
@@ -1752,8 +1892,20 @@ summary {
     padding-top: 4px;
   }
 
+  .home-intro {
+    gap: 16px;
+  }
+
+  .home-intro h2 {
+    font-size: clamp(1.7rem, 9vw, 2.4rem);
+  }
+
+  .home-start {
+    padding: 16px;
+  }
+
   .home-logo {
-    width: clamp(116px, 34vw, 154px);
+    width: clamp(190px, 56vw, 280px);
   }
 
   .home-brand h1 {
