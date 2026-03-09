@@ -1,170 +1,413 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useRef } from "react";
+import * as THREE from "three";
 
 type EyeLogoProps = {
   className?: string;
 };
 
-const MAX_LOOK_X = 26;
-const MAX_LOOK_Y = 12;
-const OUTER_EYE_PATH =
-  "M56 160C104 88 194 52 320 52C446 52 536 88 584 160C536 232 446 268 320 268C194 268 104 232 56 160Z";
-const INNER_EYE_PATH =
-  "M74 160C118 102 202 72 320 72C438 72 522 102 566 160C522 218 438 248 320 248C202 248 118 218 74 160Z";
+function createCanvas(size: number) {
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext("2d");
+
+  if (!context) {
+    throw new Error("2D canvas is not available");
+  }
+
+  return { canvas, context };
+}
+
+function createEyeballTexture() {
+  const { canvas, context } = createCanvas(1024);
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+
+  context.fillStyle = "#faf2f4";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const edgeTint = context.createRadialGradient(centerX, centerY, canvas.width * 0.16, centerX, centerY, canvas.width * 0.58);
+  edgeTint.addColorStop(0, "rgba(255, 250, 252, 0)");
+  edgeTint.addColorStop(0.7, "rgba(214, 116, 132, 0.1)");
+  edgeTint.addColorStop(1, "rgba(136, 18, 38, 0.32)");
+  context.fillStyle = edgeTint;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const vesselColors = ["rgba(150, 16, 37, 0.56)", "rgba(183, 23, 46, 0.42)", "rgba(208, 43, 66, 0.24)"];
+  const branches = [
+    { startX: 74, endX: 392, direction: 1 },
+    { startX: 96, endX: 428, direction: -1 },
+    { startX: 950, endX: 634, direction: -1 },
+    { startX: 928, endX: 600, direction: 1 }
+  ] as const;
+
+  for (const branch of branches) {
+    for (let index = 0; index < 12; index += 1) {
+      const startY = 176 + index * 54;
+      const endY = 214 + index * 20 * branch.direction;
+      const swing = Math.sin(index * 1.37) * 44;
+      const midX = (branch.startX + branch.endX) / 2 + swing;
+      const midY = (startY + endY) / 2 + Math.cos(index * 1.91) * 32;
+
+      context.beginPath();
+      context.moveTo(branch.startX, startY);
+      context.quadraticCurveTo(midX, midY, branch.endX, endY);
+      context.strokeStyle = vesselColors[index % vesselColors.length];
+      context.lineWidth = 1.5 + (index % 3) * 0.7;
+      context.lineCap = "round";
+      context.stroke();
+
+      context.beginPath();
+      context.moveTo(midX, midY);
+      context.quadraticCurveTo(
+        midX + branch.direction * 56,
+        midY - Math.sin(index * 0.84) * 34,
+        branch.endX + branch.direction * 28,
+        endY + Math.cos(index * 1.23) * 26
+      );
+      context.strokeStyle = "rgba(208, 43, 66, 0.2)";
+      context.lineWidth = 1;
+      context.stroke();
+    }
+  }
+
+  const hotSpot = context.createRadialGradient(centerX - 100, centerY - 110, 14, centerX - 100, centerY - 110, 180);
+  hotSpot.addColorStop(0, "rgba(255, 255, 255, 0.5)");
+  hotSpot.addColorStop(1, "rgba(255, 255, 255, 0)");
+  context.fillStyle = hotSpot;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  return texture;
+}
+
+function createIrisTexture() {
+  const { canvas, context } = createCanvas(1024);
+  const radius = canvas.width / 2;
+
+  context.translate(radius, radius);
+
+  const fill = context.createRadialGradient(-110, -140, 28, 0, 0, radius);
+  fill.addColorStop(0, "#ebfaff");
+  fill.addColorStop(0.18, "#a1e2ff");
+  fill.addColorStop(0.44, "#2f97ea");
+  fill.addColorStop(0.72, "#1c3d69");
+  fill.addColorStop(1, "#080d16");
+  context.fillStyle = fill;
+  context.beginPath();
+  context.arc(0, 0, radius, 0, Math.PI * 2);
+  context.fill();
+
+  for (let index = 0; index < 220; index += 1) {
+    const angle = (index / 220) * Math.PI * 2;
+    const inner = radius * 0.16;
+    const outer = radius * (0.56 + (Math.sin(index * 2.1) + 1) * 0.11);
+
+    context.beginPath();
+    context.moveTo(Math.cos(angle) * inner, Math.sin(angle) * inner);
+    context.lineTo(Math.cos(angle) * outer, Math.sin(angle) * outer);
+    context.strokeStyle = index % 8 === 0 ? "rgba(255,255,255,0.3)" : "rgba(6, 16, 32, 0.18)";
+    context.lineWidth = index % 5 === 0 ? 3.2 : 2;
+    context.stroke();
+  }
+
+  context.beginPath();
+  context.arc(0, 0, radius * 0.96, 0, Math.PI * 2);
+  context.strokeStyle = "rgba(5, 10, 18, 0.82)";
+  context.lineWidth = 28;
+  context.stroke();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  return texture;
+}
+
+function createGlowTexture() {
+  const { canvas, context } = createCanvas(512);
+  const radius = canvas.width / 2;
+
+  const redGlow = context.createRadialGradient(radius + 72, radius + 8, 18, radius + 72, radius + 8, 220);
+  redGlow.addColorStop(0, "rgba(255, 90, 110, 0.42)");
+  redGlow.addColorStop(1, "rgba(255, 90, 110, 0)");
+  context.fillStyle = redGlow;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const cyanGlow = context.createRadialGradient(radius - 92, radius - 72, 12, radius - 92, radius - 72, 170);
+  cyanGlow.addColorStop(0, "rgba(107, 231, 255, 0.24)");
+  cyanGlow.addColorStop(1, "rgba(107, 231, 255, 0)");
+  context.fillStyle = cyanGlow;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
 
 export function EyeLogo({ className }: EyeLogoProps) {
-  const rootRef = useRef<HTMLDivElement>(null);
-  const baseId = useId().replace(/:/g, "");
-  const eyeFillId = `${baseId}-eye-fill`;
-  const irisId = `${baseId}-iris`;
-  const pupilId = `${baseId}-pupil`;
-  const eyeClipId = `${baseId}-eye-clip`;
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
+    const container = containerRef.current;
+    if (!container) return;
 
-    let frame = 0;
+    const scene = new THREE.Scene();
+    const renderer = new THREE.WebGLRenderer({
+      alpha: true,
+      antialias: true,
+      powerPreference: "high-performance"
+    });
+    renderer.setClearColor(0x000000, 0);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
+    container.appendChild(renderer.domElement);
 
-    const setPosition = (clientX: number, clientY: number) => {
-      const rect = root.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const deltaX = clientX - centerX;
-      const deltaY = clientY - centerY;
-      const distance = Math.hypot(deltaX, deltaY);
+    const camera = new THREE.PerspectiveCamera(26, 1, 0.1, 100);
+    camera.position.set(0, 0, 6.2);
 
-      if (!Number.isFinite(distance) || distance === 0) {
-        root.style.setProperty("--eye-look-x", "0px");
-        root.style.setProperty("--eye-look-y", "0px");
-        return;
-      }
+    const root = new THREE.Group();
+    root.scale.setScalar(1.05);
+    scene.add(root);
 
-      const strength = Math.min(1, distance / 320);
-      const normalX = deltaX / distance;
-      const normalY = deltaY / distance;
-      const lookX = normalX * MAX_LOOK_X * strength;
-      const lookY = normalY * MAX_LOOK_Y * strength;
+    scene.add(new THREE.AmbientLight(0xffffff, 1.18));
 
-      root.style.setProperty("--eye-look-x", `${lookX.toFixed(1)}px`);
-      root.style.setProperty("--eye-look-y", `${lookY.toFixed(1)}px`);
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    keyLight.position.set(-0.9, 1.6, 5.4);
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0xaadfff, 0.8);
+    fillLight.position.set(-2.4, -0.7, 3.8);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.PointLight(0xff4d5f, 8, 16, 2);
+    rimLight.position.set(2.6, -1.2, 3.6);
+    scene.add(rimLight);
+
+    const glowTexture = createGlowTexture();
+    const eyeballTexture = createEyeballTexture();
+    const irisTexture = createIrisTexture();
+
+    const halo = new THREE.Mesh(
+      new THREE.PlaneGeometry(5.6, 3.5),
+      new THREE.MeshBasicMaterial({
+        map: glowTexture,
+        transparent: true,
+        opacity: 0.36,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      })
+    );
+    halo.position.z = -1.15;
+    root.add(halo);
+
+    const eyeRig = new THREE.Group();
+    eyeRig.position.z = 0.12;
+    root.add(eyeRig);
+
+    const gazeRig = new THREE.Group();
+    eyeRig.add(gazeRig);
+
+    const eyeball = new THREE.Mesh(
+      new THREE.SphereGeometry(1.22, 96, 96),
+      new THREE.MeshPhysicalMaterial({
+        map: eyeballTexture,
+        color: 0xfff8fb,
+        roughness: 0.5,
+        metalness: 0,
+        clearcoat: 1,
+        clearcoatRoughness: 0.16
+      })
+    );
+    eyeRig.add(eyeball);
+
+    const cornea = new THREE.Mesh(
+      new THREE.SphereGeometry(1.255, 96, 96),
+      new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.18,
+        roughness: 0.02,
+        metalness: 0,
+        transmission: 0.18,
+        clearcoat: 1,
+        clearcoatRoughness: 0
+      })
+    );
+    eyeRig.add(cornea);
+
+    const iris = new THREE.Mesh(
+      new THREE.CircleGeometry(0.62, 96),
+      new THREE.MeshStandardMaterial({
+        map: irisTexture,
+        transparent: true,
+        roughness: 0.32,
+        metalness: 0.08
+      })
+    );
+    iris.position.z = 1.245;
+    iris.renderOrder = 2;
+    gazeRig.add(iris);
+
+    const irisRing = new THREE.Mesh(
+      new THREE.TorusGeometry(0.615, 0.028, 20, 96),
+      new THREE.MeshBasicMaterial({
+        color: 0x08111c,
+        transparent: true,
+        opacity: 0.58
+      })
+    );
+    irisRing.position.z = 1.248;
+    irisRing.renderOrder = 3;
+    gazeRig.add(irisRing);
+
+    const pupil = new THREE.Mesh(
+      new THREE.CircleGeometry(0.22, 64),
+      new THREE.MeshBasicMaterial({
+        color: 0x020304
+      })
+    );
+    pupil.position.z = 1.258;
+    pupil.renderOrder = 4;
+    gazeRig.add(pupil);
+
+    const pupilCore = new THREE.Mesh(
+      new THREE.CircleGeometry(0.08, 32),
+      new THREE.MeshBasicMaterial({
+        color: 0x0c121b
+      })
+    );
+    pupilCore.position.z = 1.268;
+    pupilCore.renderOrder = 5;
+    gazeRig.add(pupilCore);
+
+    const tipDot = new THREE.Mesh(
+      new THREE.SphereGeometry(0.055, 24, 24),
+      new THREE.MeshBasicMaterial({
+        color: 0x000000
+      })
+    );
+    tipDot.position.set(0, 0, 1.295);
+    tipDot.renderOrder = 6;
+    gazeRig.add(tipDot);
+
+    const highlightLarge = new THREE.Mesh(
+      new THREE.CircleGeometry(0.13, 48),
+      new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.92
+      })
+    );
+    highlightLarge.position.set(-0.25, 0.3, 1.285);
+    highlightLarge.renderOrder = 7;
+    gazeRig.add(highlightLarge);
+
+    const highlightSmall = new THREE.Mesh(
+      new THREE.CircleGeometry(0.045, 32),
+      new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.45
+      })
+    );
+    highlightSmall.position.set(-0.06, 0.1, 1.29);
+    highlightSmall.renderOrder = 8;
+    gazeRig.add(highlightSmall);
+
+    const clock = new THREE.Clock();
+    const pointerTarget = new THREE.Vector2(0, 0);
+    const pointerSmooth = new THREE.Vector2(0, 0);
+
+    const resize = () => {
+      const width = Math.max(container.clientWidth, 1);
+      const height = Math.max(container.clientHeight, 1);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
     };
 
     const handlePointerMove = (event: PointerEvent) => {
-      cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => {
-        setPosition(event.clientX, event.clientY);
-      });
+      const rect = container.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      const y = ((event.clientY - rect.top) / rect.height) * 2 - 1;
+      pointerTarget.set(THREE.MathUtils.clamp(x, -1, 1), THREE.MathUtils.clamp(y, -1, 1));
     };
 
-    const reset = () => {
-      cancelAnimationFrame(frame);
-      root.style.setProperty("--eye-look-x", "0px");
-      root.style.setProperty("--eye-look-y", "0px");
+    const resetPointer = () => {
+      pointerTarget.set(0, 0);
     };
 
+    const resizeObserver = new ResizeObserver(resize);
+    resizeObserver.observe(container);
     window.addEventListener("pointermove", handlePointerMove, { passive: true });
-    window.addEventListener("pointerleave", reset);
-    window.addEventListener("blur", reset);
-    reset();
+    window.addEventListener("pointerleave", resetPointer);
+    window.addEventListener("blur", resetPointer);
+    resize();
+
+    renderer.setAnimationLoop(() => {
+      const elapsed = clock.getElapsedTime();
+
+      pointerSmooth.lerp(pointerTarget, 0.08);
+
+      gazeRig.position.x = pointerSmooth.x * 0.34;
+      gazeRig.position.y = -pointerSmooth.y * 0.18;
+      eyeRig.rotation.y = -pointerSmooth.x * 0.05;
+      eyeRig.rotation.x = pointerSmooth.y * 0.06;
+      eyeRig.position.z = 0.12;
+
+      halo.rotation.z = Math.sin(elapsed * 0.7) * 0.06;
+      root.rotation.z = Math.sin(elapsed * 0.45) * 0.02;
+      root.position.y = Math.sin(elapsed * 1.1) * 0.035;
+
+      renderer.render(scene, camera);
+    });
 
     return () => {
-      cancelAnimationFrame(frame);
+      renderer.setAnimationLoop(null);
+      resizeObserver.disconnect();
       window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerleave", reset);
-      window.removeEventListener("blur", reset);
+      window.removeEventListener("pointerleave", resetPointer);
+      window.removeEventListener("blur", resetPointer);
+
+      scene.traverse((object) => {
+        const mesh = object as THREE.Mesh;
+        if (!("geometry" in mesh)) return;
+
+        mesh.geometry?.dispose();
+
+        const material = mesh.material;
+        if (Array.isArray(material)) {
+          for (const entry of material) {
+            entry.dispose();
+          }
+        } else {
+          material?.dispose();
+        }
+      });
+
+      glowTexture.dispose();
+      eyeballTexture.dispose();
+      irisTexture.dispose();
+      renderer.dispose();
+
+      if (renderer.domElement.parentNode === container) {
+        container.removeChild(renderer.domElement);
+      }
     };
   }, []);
 
   return (
     <div
-      aria-label="Blinky eye logo"
+      aria-label="Blinky three-dimensional eye logo"
       className={["eye-logo", className].filter(Boolean).join(" ")}
-      ref={rootRef}
+      ref={containerRef}
       role="img"
-    >
-      <svg
-        aria-hidden="true"
-        className="eye-logo-svg"
-        fill="none"
-        viewBox="0 0 640 320"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <defs>
-          <radialGradient
-            id={eyeFillId}
-            cx="0"
-            cy="0"
-            gradientTransform="translate(320 160) rotate(90) scale(120 276)"
-            gradientUnits="userSpaceOnUse"
-            r="1"
-          >
-            <stop stopColor="#FFF8FA" />
-            <stop offset="0.52" stopColor="#F6E9EC" />
-            <stop offset="0.8" stopColor="#E7C9D0" />
-            <stop offset="1" stopColor="#CE9EA9" />
-          </radialGradient>
-          <radialGradient id={irisId} cx="0" cy="0" r="1" gradientTransform="translate(302 138) rotate(51.5) scale(156)" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#E7F8FF" />
-            <stop offset="0.2" stopColor="#9FD8FF" />
-            <stop offset="0.5" stopColor="#4C90D9" />
-            <stop offset="0.8" stopColor="#20345B" />
-            <stop offset="1" stopColor="#090B14" />
-          </radialGradient>
-          <radialGradient id={pupilId} cx="0" cy="0" r="1" gradientTransform="translate(310 150) rotate(55.3048) scale(78)" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#1A2437" />
-            <stop offset="0.6" stopColor="#04070D" />
-            <stop offset="1" stopColor="#000000" />
-          </radialGradient>
-          <clipPath id={eyeClipId}>
-            <path d={INNER_EYE_PATH} />
-          </clipPath>
-        </defs>
-
-        <path d={OUTER_EYE_PATH} fill="#05080F" />
-        <path d={OUTER_EYE_PATH} fill="#0B1017" fillOpacity="0.28" />
-
-        <g className="eye-logo-open">
-          <g clipPath={`url(#${eyeClipId})`}>
-            <path d={INNER_EYE_PATH} fill={`url(#${eyeFillId})`} />
-            <path d="M88 116C138 124 194 141 242 166" stroke="#A51325" strokeLinecap="round" strokeOpacity="0.55" strokeWidth="4" />
-            <path d="M102 140C158 148 212 170 262 196" stroke="#B6172C" strokeLinecap="round" strokeOpacity="0.48" strokeWidth="3" />
-            <path d="M100 184C148 182 205 178 256 168" stroke="#8E1023" strokeLinecap="round" strokeOpacity="0.44" strokeWidth="3" />
-            <path d="M542 116C494 124 444 142 394 168" stroke="#A51325" strokeLinecap="round" strokeOpacity="0.55" strokeWidth="4" />
-            <path d="M532 146C478 152 430 174 378 198" stroke="#B6172C" strokeLinecap="round" strokeOpacity="0.48" strokeWidth="3" />
-            <path d="M530 182C482 182 430 178 382 168" stroke="#8E1023" strokeLinecap="round" strokeOpacity="0.44" strokeWidth="3" />
-            <path d="M124 102C170 128 198 152 228 196" stroke="#C12435" strokeLinecap="round" strokeOpacity="0.34" strokeWidth="2.5" />
-            <path d="M516 102C470 128 442 152 412 196" stroke="#C12435" strokeLinecap="round" strokeOpacity="0.34" strokeWidth="2.5" />
-
-            <g className="eye-logo-gaze">
-              <circle cx="320" cy="160" fill={`url(#${irisId})`} r="84" />
-              <circle cx="320" cy="160" fill="#111B2E" fillOpacity="0.36" r="52" />
-              <circle cx="320" cy="160" fill={`url(#${pupilId})`} r="36" />
-              <circle cx="286" cy="126" fill="white" fillOpacity="0.94" r="14" />
-              <circle cx="302" cy="146" fill="white" fillOpacity="0.48" r="6" />
-              <circle cx="354" cy="192" fill="#8BE7FF" fillOpacity="0.16" r="18" />
-            </g>
-          </g>
-        </g>
-
-        <path
-          className="eye-logo-lid-top"
-          d="M92 150C140 101 220 76 320 76C420 76 500 101 548 150"
-          stroke="#2F3644"
-          strokeOpacity="0.96"
-          strokeLinecap="round"
-          strokeWidth="18"
-        />
-        <path
-          className="eye-logo-lid-bottom"
-          d="M92 170C140 219 220 244 320 244C420 244 500 219 548 170"
-          stroke="#151A24"
-          strokeOpacity="0.92"
-          strokeLinecap="round"
-          strokeWidth="14"
-        />
-      </svg>
-    </div>
+    />
   );
 }

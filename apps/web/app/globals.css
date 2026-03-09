@@ -1280,118 +1280,23 @@ summary {
   filter:
     drop-shadow(0 18px 42px rgba(0, 0, 0, 0.52))
     drop-shadow(0 0 30px rgba(255, 77, 95, 0.16));
-  animation: home-logo-fade 4.8s ease-in-out infinite;
-  will-change: opacity, filter;
 }
 
 .eye-logo {
-  --eye-look-x: 0px;
-  --eye-look-y: 0px;
   position: relative;
   display: block;
-}
-
-.eye-logo-svg {
-  display: block;
-  width: 100%;
-  height: auto;
   overflow: visible;
 }
 
-.eye-logo-gaze {
-  transform: translate(var(--eye-look-x), var(--eye-look-y));
-  transform-box: fill-box;
-  transform-origin: center;
-  transition: transform 70ms linear;
-}
-
-.eye-logo-open,
-.eye-logo-lid-top,
-.eye-logo-lid-bottom {
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-.eye-logo-open {
-  animation: eye-logo-blink 8.8s ease-in-out infinite;
-}
-
-.eye-logo-lid-top {
-  animation: eye-logo-top-lid 8.8s ease-in-out infinite;
-}
-
-.eye-logo-lid-bottom {
-  animation: eye-logo-bottom-lid 8.8s ease-in-out infinite;
+.eye-logo > canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .home-brand-copy {
   display: grid;
   gap: 0;
-}
-
-@keyframes home-logo-fade {
-  0%,
-  100% {
-    opacity: 0.56;
-    filter:
-      drop-shadow(0 18px 42px rgba(0, 0, 0, 0.52))
-      drop-shadow(0 0 18px rgba(255, 77, 95, 0.12));
-  }
-
-  50% {
-    opacity: 1;
-    filter:
-      drop-shadow(0 18px 42px rgba(0, 0, 0, 0.58))
-      drop-shadow(0 0 28px rgba(255, 77, 95, 0.22));
-  }
-}
-
-@keyframes eye-logo-blink {
-  0%,
-  44%,
-  46.5%,
-  80%,
-  82%,
-  100% {
-    transform: scaleY(1);
-  }
-
-  45.2%,
-  81% {
-    transform: scaleY(0.04);
-  }
-}
-
-@keyframes eye-logo-top-lid {
-  0%,
-  44%,
-  46.5%,
-  80%,
-  82%,
-  100% {
-    transform: translateY(0);
-  }
-
-  45.2%,
-  81% {
-    transform: translateY(18px);
-  }
-}
-
-@keyframes eye-logo-bottom-lid {
-  0%,
-  44%,
-  46.5%,
-  80%,
-  82%,
-  100% {
-    transform: translateY(0);
-  }
-
-  45.2%,
-  81% {
-    transform: translateY(-18px);
-  }
 }
 
 .home-brand h1 {
